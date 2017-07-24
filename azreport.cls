@@ -72,6 +72,7 @@
 \newcommand{\sref}[1]{Section~\ref{#1}}
 \newcommand{\aref}[1]{Appendix~\ref{#1}}
 %
+% TODO: textsubscript
 %----------------------------------------------------------------------------------------
 % Class structure: The following sections define or re-define commands to 
 % 				format the pdf according to `4-S5-cv-X Submission Ready Standards' v. 2.0
@@ -95,6 +96,7 @@
 \RequirePackage{graphicx} 
 \RequirePackage{multirow}	  % multirow staments in tables
 \RequirePackage{longtable}	% multipage spanning tables
+% \RequirePackage{array}      % left-aligned, width determined cells in tables
 \RequirePackage[dvipsnames,table]{xcolor}
 % \RequirePackage{arydshln} % not installed...
 \RequirePackage{amssymb}
@@ -106,6 +108,8 @@
 %
 % Create command to add footnote to figures/tables
 \newcommand\fnote[1]{\captionsetup{font=small}\caption*{#1}}
+\renewcommand{\arraystretch}{1.25}  % longer rowheight in tables
+% \newcolumntype{L}{>{\raggedright\arraybackslash}p{6cm}} % size can be overwritten
 %----------------------------------------------------------------------------------------
 %	3. Fonts
 %----------------------------------------------------------------------------------------
@@ -124,7 +128,25 @@
 	  	     	citecolor = blue}		     
 % External links (web links or email links) must be valid and NOT hyperlinked. 
 %----------------------------------------------------------------------------------------
-%	4. Margins, Headers and Footers
+%	4. Paragraphs & typesetting penalties
+%----------------------------------------------------------------------------------------
+\usepackage{ragged2e}
+\RaggedRight % Left aligned
+\raggedbottom % no additonal vertical space
+% Set the distance between normal paragraphs to 12 pt
+\setlength{\parskip}{12pt plus 0.4pt minus 0.4pt}
+% no indention of paragraphs
+\setlength{\parindent}{0pt}
+%
+% \setlength{\topskip}{1\topskip \@plus 5\p@}
+% \setlength\arrayrulewidth{.5\p@}% increase linewidht to 0.5 
+%
+\doublehyphendemerits=10000		    % No consecutive line hyphens.
+\brokenpenalty=10000              % No broken words across columns/pages.
+\interfootnotelinepenalty=9999    % Almost never break footnotes.
+%
+%----------------------------------------------------------------------------------------
+%	5. Margins, Headers and Footers
 %----------------------------------------------------------------------------------------
 % The print area (all text including header and footer) must fit on both Letter and A4 paper
 \RequirePackage{geometry}
@@ -164,7 +186,7 @@
 \pagestyle{followingpage}	% set to follwingpage (for first page is set in titlepage below)
 %
 %----------------------------------------------------------------------------------------
-%	5. Title page design
+%	6. Title page design
 %----------------------------------------------------------------------------------------
 \renewcommand\@maketitle{%
   \newpage%
@@ -225,7 +247,7 @@
 }%
 %
 %----------------------------------------------------------------------------------------
-%	6. Formating of lists (bullets and numbered)
+%	7. Formating of lists (bullets and numbered)
 %----------------------------------------------------------------------------------------
 % This section remains to be fixed but am waiting for cluster update of latex packages
 % \RequirePackage[shortlabels]{enumitem} % 
@@ -244,37 +266,19 @@
 % Create a wrapper around enumerate to give the acceptable options
 %
 %----------------------------------------------------------------------------------------
-%	7. Typesetting penalties
-%----------------------------------------------------------------------------------------
-\raggedbottom
-% \setlength{\topskip}{1\topskip \@plus 5\p@}
-% \setlength\arrayrulewidth{.5\p@}% increase linewidht to 0.5 
-%
-\doublehyphendemerits=10000		    % No consecutive line hyphens.
-\brokenpenalty=10000              % No broken words across columns/pages.
-\interfootnotelinepenalty=9999    % Almost never break footnotes.
-%
-%----------------------------------------------------------------------------------------
 %	8. Misc packages
 %----------------------------------------------------------------------------------------
 \RequirePackage[UKenglish]{babel}
 \RequirePackage{amsmath}			    % for nicer equations
-% \RequirePackag{array}
 \RequirePackage{underscore}     	% underscore not a special character in text mode
 % 
 %----------------------------------------------------------------------------------------
-%	9. Design of section headers and normal paragraph
+%	9. Design of section headers
 %----------------------------------------------------------------------------------------
-% Set the distance between normal paragraphs to 12 pt
-\setlength{\parskip}{12pt plus 0.4pt minus 0.4pt}
-% no indention of paragraphs
-\setlength{\parindent}{0pt}
-%
 % Redefined the headings. The space before and after automatically includes \parskip. 
 % Hence, remove 12 from original definition. 
 % The after skip needs to be positive otherwise there is no linebreak after the section header
-% Publishing has confirmed that the extra linespace after the headers is ok (12 instead of 6). 
-%
+% Publishing has confirmed that the extra linespace after the headers is ok (12 instead of 6). %
 % Heading 1: 14pt, Bold, All caps. 24 pt before and 12 after
 \renewcommand\section{\@startsection{section}{1}{\z@} % name, level, indent (indents both number and text)
                                    {12pt \@plus 0.6pt \@minus 0.6pt}% before skip
