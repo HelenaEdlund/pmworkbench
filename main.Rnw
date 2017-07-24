@@ -1,0 +1,148 @@
+\documentclass[letterpaper, 12pt]{azreport}
+% az require 9-12 pt. Hence, allowed latex size functions are:  
+% \footnotesize=10, \small=10.95, \normalsize=12 and \large=14.4
+
+% Note: file size of a single PDF file is limited to 100 Megabyte (MB). 
+
+% -------------------------------------------------
+% Setup R environment
+% -------------------------------------------------
+% When compling/knitting this fiel a new R session is started and 
+% the working directory is set to where the file is located.
+% Hence, all paths in "main" should be relative to the Report folder and 
+% all paths in sections and appendices should be relative to these folders
+% Do *not* use setwd within the script, it will not work properly.
+<<environmentPrep,echo=F,warning=F,message=F>>=
+source('Setup/environmentPrep.R')
+@ 
+
+% -------------------------------------------------
+% Specify paths to images (EDA, BaseModel, CovModel)
+% -------------------------------------------------
+\graphicspath{
+{\Sexpr{paste(paste0(".", resEDADir,"/"))}}  % add a . to go up one level
+{\Sexpr{paste(paste0(".", resBaseModelDir,"/"))}}
+{\Sexpr{paste(paste0(".", resCovModelDir,"/"))}}
+{Images/} % other images, e.g. AZ logo
+}
+
+% -------------------------------------------------
+% Load report-specific variables
+% -------------------------------------------------
+\Sexpr{knit_child('./Setup/setup.Rnw')}
+
+% -------------------------------------------------
+% Start of report
+% -------------------------------------------------
+\begin{document}
+% Start TOC, LOF and LOT for main report
+\startcontents[sections]
+\startlist[main]{lof}
+\startlist[main]{lot}
+
+% add title page to toc
+\phantomsection \addcontentsline{toc}{section}{Title page} 
+\maketitle
+
+% -------------------------------------------------
+% TOC
+% -------------------------------------------------
+% add TOC to toc
+\phantomsection \addcontentsline{toc}{section}{\contentsname} 
+\printcontents[sections]{}{1}
+  {\section*{\contentsname} \thispagestyle{followingpage} \setlength{\parskip}{0pt}}
+
+% -------------------------------------------------
+% List of tables
+% -------------------------------------------------
+\printlist[main]{lot}{}{\section*{\listtablename} \thispagestyle{followingpage}}
+
+% -------------------------------------------------
+% List of figures
+% -------------------------------------------------
+\printlist[main]{lof}{}{\section*{\listfigurename} \thispagestyle{followingpage}}
+
+% -------------------------------------------------
+% List of appendices
+% -------------------------------------------------
+\listofapp
+\cleardoublepage
+
+% -------------------------------------------------
+% List of abbreviations and special terms
+% -------------------------------------------------
+\Sexpr{knit_child('./Sections/abbreviations.Rnw')}
+
+% -------------------------------------------------
+% Executive summary
+% -------------------------------------------------
+\Sexpr{knit_child('./Sections/executiveSummary.Rnw')}
+
+% -------------------------------------------------
+% Include sections
+% -------------------------------------------------
+\Sexpr{knit_child('./Sections/introduction.Rnw')}
+ 
+\Sexpr{knit_child('./Sections/objectives.Rnw')}
+
+\Sexpr{knit_child('./Sections/data.Rnw')}
+
+\Sexpr{knit_child('./Sections/methods.Rnw')}
+ 
+\Sexpr{knit_child('./Sections/results.Rnw')}
+ 
+\Sexpr{knit_child('./Sections/discussion.Rnw')}
+ 
+\Sexpr{knit_child('./Sections/conclusions.Rnw')}
+
+% -------------------------------------------------
+% Include Bibliography
+% -------------------------------------------------
+\bibliographystyle{unsrtnat}		% style of bib 
+\bibliography{references} 			% name without the .bib 
+\cleardoublepage
+
+% Stop the main TOC, LOF and LOT
+\stopcontents[sections]
+\stoplist[main]{lof}
+\stoplist[main]{lot}
+
+% -------------------------------------------------
+% Include appendices
+% -------------------------------------------------
+% Tell latex that these sections are appendices
+% (reset counters to A,B,C etc)
+\appendices  
+
+\Sexpr{knit_child('./Appendices/analysisPlan.Rnw')}
+\cleardoublepage
+\Sexpr{knit_child('./Appendices/dataSpecFile.Rnw')}
+\cleardoublepage
+\Sexpr{knit_child('./Appendices/dataIssuesAndHandling.Rnw')}
+\cleardoublepage
+\Sexpr{knit_child('./Appendices/additionalEDA.Rnw')}
+\cleardoublepage
+\Sexpr{knit_child('./Appendices/parameterEstimatesKeyModels.Rnw')}
+\cleardoublepage
+\Sexpr{knit_child('./Appendices/GOFplots.Rnw')}
+\cleardoublepage
+\Sexpr{knit_child('./Appendices/baseModelOutputFile.Rnw')}
+\cleardoublepage
+\Sexpr{knit_child('./Appendices/SCMOutputFile.Rnw')}
+\cleardoublepage
+\Sexpr{knit_child('./Appendices/plotsForAppropriatenessFinalModel.Rnw')}
+\cleardoublepage
+\Sexpr{knit_child('./Appendices/finalModelOutputFile.Rnw')}
+\cleardoublepage
+\Sexpr{knit_child('./Appendices/individualPlots.Rnw')}
+\cleardoublepage
+\Sexpr{knit_child('./Appendices/outliers.Rnw')}
+\cleardoublepage
+\Sexpr{knit_child('./Appendices/additionalVPC.Rnw')}
+\cleardoublepage
+\Sexpr{knit_child('./Appendices/bootstrapAnalysis.Rnw')}
+
+% -------------------------------------------------
+% End of report
+% -------------------------------------------------
+\end{document}
