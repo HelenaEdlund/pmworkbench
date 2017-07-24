@@ -3,8 +3,8 @@ aztable <- funtion(dataframe, caption, label){
     dust(dataframe,
        longtable=T,
        hhline = T, 
-       caption = caption,
-       label = label) %>%
+       caption = caption, 
+       label = label) %>% # label without the "tab:"
     # border thickness does for some reason not work. 
     # Trying to update latex packages on cluster to see it that solves it
     sprinkle(part="head", bold=T, 
