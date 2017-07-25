@@ -10,7 +10,7 @@ aztable <- funtion(dataframe, caption, label){
     sprinkle(part="head", bold=T, 
              border=c("top", "bottom"), 
              border_thickness=3, border_units="pt") %>% 
-    sprinkle(row=nrow(concByDose), border=c("bottom"), 
+    sprinkle(row=nrow(dataframe), border=c("bottom"), 
              border_thickness=3, border_units="pt") %>% 
     sprinkle_print_method("latex")
   return(table)
