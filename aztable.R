@@ -18,4 +18,5 @@ aztable <- function(dataframe, caption=NULL, label=NULL){
   # border thickness does for some reason not work:  
   # Trying to update latex packages on cluster to see it that solves it
   # possibly make longtable optional to not break short tables
+  # Getting a lot of errors from the hhline package: the character < ignored in \hhline argument. 
 }
