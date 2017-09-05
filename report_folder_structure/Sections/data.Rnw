@@ -1,0 +1,138 @@
+% -------------------------------------------------
+% Section: Data
+% -------------------------------------------------
+\section{Data}\label{sec:data}
+
+The data used in this population PK analysis were pre-specified in the data analysis plan (\aref{app:analysisPlan}).
+
+% -------------------------------------------------
+% Subsection: Description of source data
+% -------------------------------------------------
+\subsection{Description of study level data} \label{subsec:data:descriptionOfStudyData}
+% -------------------------------------------------
+% Instructions
+% -------------------------------------------------
+% The primary audience for this section: technical readers and reviewers. 
+% The section includes the information about the source data used in the population PK analysis. It should be short but includes the essential information related to the data. 
+% Suggestions:
+% Provide a short description of the studies, including number of subjects, number and timing of samples per subject, any information to distinguish different studies. It is preferable to have all these information in table format. 
+% If this table include many studies, then the additional information could be provided in an appendix.
+% Essential information includes but not limited to, Description of studies, population/design, 
+% samples/subject (range), and Demographic (age group) information.
+% Include the list of excluded data points (before model development) and reasons and if required, depict as a table in the appendix section 
+% Include handling of missing data (mention the missing data and description of imputation here and detailed the data imputation with equations in appendix)
+%
+Data from \Sexpr{nStudies} clinical trials were included in the analysis.
+\begin{itemize}
+  \item d0000c0000 was a ...
+\end{itemize}
+
+Details of the number of subjects with evaluable plasma concentrations and the plasma sampling schedule in each study are provided in \tref{tab:studyDetails}. %, in \aref{app:studyDetails}. 
+% Create this table here or in appendix : DetailsOfIncludedStudies
+% Probably better to create a csv file with the descriptions,
+% read that in with R and output as table
+\begin{table}\caption{\label{tab:studyDetails} Summary of studies and study characteristics}
+\begin{longtable}{p{2cm} p{2.5cm} p{2.5cm} p{2.5cm} p{3cm}} \hline
+\textbf{Study}  & \textbf{Study}       & \textbf{Study}       & \textbf{Study}  & \textbf{Key}\\[-6pt]
+\textbf{Number} & \textbf{Description} & \textbf{Population}  & \textbf{Design} & \textbf{information} \\ \hline \endhead
+d0000c0000 & & & & \\ \hline
+\end{longtable}
+\end{table}
+
+{\color{red}The data used in this analysis can be found in the final data listings for the respective studies (\Sexpr{ostudies}) of the appropriate clinical study report(s).}
+
+% -------------------------------------------------
+% Pharmacometric analysis data file
+% -------------------------------------------------
+\subsection{Pharmacometric analysis data file} \label{subsec:data:PMAnalysisData}
+For the purpose of this analysis, data including \Sexpr{drugName} concentrations, treatment information and selected subject covariates were extracted from the study level datasets. A initial pharmacometric analysis data file ``\Sexpr{sourcedataFileName}'' was prepared by \Sexpr{programmerName} and was delivered on \Sexpr{deliveryDateForPrint}. Instructions for creating the dataset are contained in the data specifications table provided by QCP (\aref{app:dataSpecificationFile}). 
+
+SAS programs for creating the analysis dataset were developed following QCP best practices and guidelines. The data were quality controlled following the best practices including running detailed data diagnostics and by thorough pharmacometric review and examination. The programs were documented and archived in the QCP_MODELING server in order to maintain an audit trail.
+
+In total, \Sexpr{nTotConcRaw} plasma PK samples from \Sexpr{nTotIdRaw} patients treated with \Sexpr{drugName} were available for inclusion in this analysis (placebo treated patients were excluded from the analysis). Concentration records below the lower limit of quantification (BLQ) were included in the data file. Handling of BLQ data, using different approaches, was done within the analysis scripts.
+
+\subsubsection{Data exclusions} \label{subsubsec:data:dataExclusions}
+% -------------------------------------------------
+% Instructions
+% -------------------------------------------------
+% A description of data excluded from analysis and reasons for exclusion. 
+% Provide information on the rules for removal of data with missing information, removal of outliers together with the rationale for specific decisions made during the creation of the datasets (handling of LOQ etc.). 
+% Provide listings of specific data points removed from the dataset (pre-modelling), along with the reason for omission in \aref{app:dataIssuesAndHandling}.
+
+% \Sexpr{nSamplesExcluded}
+samples were excluded from the analysis due to missing dosing or sampling time information (\aref{app:dataIssuesAndHandling}) and another
+% \Sexpr{nBLQSamplesExcluded}
+samples, with \Sexpr{drugName} plasma concentrations below the lower limit of quantification, were also excluded from this analysis (\tref{tab:summaryExcludedData}). 
+
+% <<summaryExcludedData, results='asis', echo=F, warning=F, message=F>>=
+% # To be generated - this is the code from acalabrutinib
+% excludedDataSummary <- 
+%   read.csv(file = paste(resEDADir, "omittedConcDataSummary.csv", sep="/"))
+% kable(excludedDataSummary, 
+%       row.names = F, 
+%       caption = paste0(omittedDataTab$ref, ". Summary of excluded concentration records"),
+%       align = c("l","c"),
+%       col.names = c("Reason", "N concentrations"))
+% # label : summaryExcludedData
+% @
+
+\subsubsection{Final dataset(s) used for analysis} \label{subsubsec:data:analysisDataset}
+% -------------------------------------------------
+% Suggestions
+% Provide a description of any manipulation performed on initial PM analysis data file including short description on why, names of added variables and name and location of manipulation file(s) \aref{app:dataIssuesAndHandling}. 
+% If datasets are modified over the course of the analysis, the file name of each version of the data set must be unique and provided in the \aref{app:dataIssuesAndHandling}. This allows verification of the different data sets utilized for the various model files.
+% -------------------------------------------------
+The dataset used for analysis consisted of \Sexpr{nTotConc} plasma concentrations obtained from \Sexpr{nTotId} subjects. The median (range) of samples available per individual were \Sexpr{nConcPerId}. 
+
+\tref{tab:nConcPerDoseGroup} and \tref{tab:nConcPerStudy} provides a stratification of the data used in the population PK analysis per dose group and study, respectively.
+
+The total percentage of BLQ data was (\Sexpr{percentBLQ} \%) %, which led to the consideration of more advanced methods for BLQ data handling (see \sref{sec:results:EstimationAndBLQ}).
+(see \aref{app:additionalEDA} for details on time after dose of BLQ samples).
+
+% Include if done: 
+% Population PK model development was based on \Sexpr{nIdDevelopmentSubset} subjects (study numbers) and \Sexpr{nIdEvaluationSubset} subjects (study number) were used for model qualification. The final model was developed including all \Sexpr{nTotId} subjects.
+
+<<concByDose, results='asis', echo=F, warning=F, message=F>>=
+# Code to summarize this dataframe in s06_exploratoryDataAnalysis.R
+concByDose <-
+  read.csv(file = file.path(resEDADir, "concentrationsByDose.csv"))
+
+concByDoseTab <-
+  aztable(concByDose,
+          caption=paste0("Number of ",drugName," Samples and Fraction BLQ by Dose."),
+          label="nConcPerDoseGroup") %>% 
+  sprinkle_colnames(nSubjects="N Subjects",
+                    nConc="N samples",
+                    percentBlqByDose="BLQ samples (\\%)")
+print(concByDoseTab)
+@
+
+% <<includedConcByStudy, results='asis', echo=F, warning=F, message=F>>=
+% # To be generated
+% # includedConcByStudy <-
+%   # aztable(concByStudy,
+%   #         caption=paste0("Number of ",drugName," Samples and Fraction BLQ by Study."),
+%   #         label="nConcPerStudy") %>% 
+%   # sprinkle_colnames(nSubjects="N Subjects",
+%   #                   nConc="N samples",
+%   #                   percentBlqByDose="BLQ samples (\\%)")
+% #print(includedConcByStudy)
+% @
+
+% Example text
+The dataset was built for NONMEM analysis. However, changes in the dataset structure were needed to enable investigation of different absorption models. Hence, different versions of the analysis dataset were built. The file names of each version of the dataset is provided in \aref{app:dataIssuesAndHandling}.
+
+% -------------------------------------------------
+% Handling of covariates
+% -------------------------------------------------
+\subsection{Handling of covariates}\label{subsec:data:handlingOfCovariates}
+% -------------------------------------------------
+% Instructions: 
+% Describe set of covariates included in analysis (if only baselines values are used etc).
+% Describe strategy for imputation when missing covariates. Alternatively, this section may be included as an appendix. 
+% Provide the derivation of covariate information in an appendix. For example, detail the derivation of covariates and details of time variable covariates (e.g., time-dependent CrCL due to change in renal function) 
+% -------------------------------------------------
+Details of the derivation of covariate information are provedid in \aref{app:dataIssuesAndHandling}.
+
+% Example text
+In the analysis datasets, missing values of continuous covariates were replaced with the median value in the population. For body weight, body height, CRCL and eGFR, the median stratified by SEX was used. The derived covariates (such as BMI or BSA) were calculated based on the imputed value(s) for subjects missing one or several of the covariates used in the calculation. Missing categorical covariates were not imputed but modelled as a separate category; or were combined with one of the other categories as appropriate.
