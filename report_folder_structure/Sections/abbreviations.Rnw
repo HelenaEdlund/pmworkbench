@@ -1,0 +1,78 @@
+% -------------------------------------------------
+% Table with abbreviations and symbols
+% -------------------------------------------------
+% Add an unnumbered section and add it to the TOC (do not modify)
+\section*{Abbreviations and definitions of terms} \label{sec:abbreviationList}
+\phantomsection \addcontentsline{toc}{section}{Abbreviations and definitions of terms}
+Abbrevations for dataset variables are defined within the data sepcification file (\aref{app:dataSpecificationFile}). 
+
+\addtocounter{table}{-1} % remove from table counter DO NOT MOVE (will mess up hyperrefs)
+% -------------------------------------------------
+% Table starts here, separate the columns with "&" and mark end of line with "\\"
+% -------------------------------------------------
+\begin{longtable}{p{3.0cm} p{11cm}} \hline
+\textbf{Abbreviation or special term} & \textbf{Explanation}\\ \hline \endhead
+$\alpha$      & Distributional rate constant \\
+$\beta$       & Terminal elimination constant \\
+$\epsilon$    & Residual error on measurement \\
+$\eta$        & Between subject random variability term in non-linear mixed effect analysis. The difference between the individual parameter estimates and the population parameter estimate. \\
+$\pi^{2}$     &	Variance of the between occasion random variability \\
+$\tau$        & Between-occasion random variability term in non-linear mixed effect analysis. \\
+$\theta$      & Fixed effect parameter in population PK analysis \\ 
+$\sigma^{2}$  &	Variance of the residual variability \\ 
+$\omega^{2}$  &	Variance of the between subject random variability \\
+$\Omega_{2}$  & Variance-covariance matrix of $\omega^{2}$ \\
+AGE           &	Age \\
+$AUC_{0-x}$	  & Area under the plasma concentration - time curve from time zero to time x \\
+BID	          & bis in die (twice daily dosing) \\
+BMI	          & Body mass index \\
+BLQ		        & Below the lower limit of quantification \\
+BOV		        & Between occasion variability \\
+BWT	          & Body weight \\
+BSV	          & Between subject variability \\
+CL/F          & Apparent total body clearance of drug from plasma after extravascular administration \\
+$C_{max}$     & Maximum plasma concentration \\
+CMT	          & Compartment \\
+CV            & Coefficient of variation \\
+CWRES	        & Conditional weighted residuals \\
+CYP		        & Cytochrome P450 \\
+DDI           & Drug-drug interaction \\
+DF	          & Degree of freedom \\
+EBE		        & Empirical Bayes estimate \\
+FOCE	        & First order conditional estimation method of NONMEM \\
+h	            & Hour \\
+IPRED         & Individual predictions \\
+Ka	          & Absorption rate constant \\
+kg	          & Kilogram \\
+L	            & litre \\
+LLOQ		      & Lower limit of quantification \\
+ln		        & Natural logarithm \\
+MDV           & Missing concentration (dependent variable) \\
+mg	          & milligram \\
+mL	          & millilitre \\
+n	            & A unitless number \\
+NA	          & Not applicable \\
+NCA		        & Non-compartmental analysis \\
+ng	          & nanogram \\
+NONMEM	      & Nonlinear mixed-effects modelling software \\
+NPDE  	      & Normalized prediction distribution error \\
+OFV	          & Objective function value as calculated in NONMEM software. In non-linear mixed effects, this is the -2 times the log-likelihood of the parameters under the observed data \\
+$P$	  	      & Parameter \\
+PK	          & Pharmacokinetics \\
+PRED          & Population (mean) predictions \\
+Q/F	          & Apparent inter-compartmental clearance \\
+QCP		        & Quantitative clinical pharmacology \\
+QD	          & Once daily administration \\
+RSE	          & Relative standard error \\
+RV	          & Residual variability \\
+SD	          & Standard deviation \\
+SDTM		      & Study data tabulation model \\
+$t_{1/2}$	    & Terminal elimination half-life \\
+$t_{max}$     & Time to reach peak concentration \\
+TV	          & Typical population mean value \\
+ULN		        & Upper limit of normal \\
+Vc/F	        & Apparent volume of the central compartment \\
+Vp/F	        & Apparent volume of the peripheral compartment \\
+WRES	        & Weighted residuals \\ \hline
+\end{longtable}
+\clearpage
