@@ -1,0 +1,8 @@
+% No partial table of content, list of tables and list of figures needed for this appendix
+\azappendix{Analysis plan} \label{app:analysisPlan} 
+
+% the \includepdf includes the pdf to the document. Give the link to where the doc is stored
+
+%\includepdf[pages=-]{AnalysisPlan.pdf}
+
+\cleardoublepage

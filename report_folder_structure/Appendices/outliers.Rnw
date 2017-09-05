@@ -1,0 +1,28 @@
+% -------------------------------------------------
+% Appendix setup 
+% -------------------------------------------------
+% Start a partial table of content, list of tables and list of figures. 
+\startcontents[sections]
+\startlist[appOutliers]{lof}
+\startlist[appOutliers]{lot}
+
+\azappendix{Details of outliers during model development} \label{app:outliers} 
+
+\printcontents[sections]{l}{1}{\section*{\contentsname}}
+\printlist[appOutliers]{lot}{}{\section*{\listtablename}}
+\printlist[appOutliers]{lof}{}{\section*{\listfigurename}}
+\cleardoublepage
+
+% -------------------------------------------------
+% Start writing appendix here
+% -------------------------------------------------
+
+
+
+% -------------------------------------------------
+% Stop writing appendix here, end the adding to the lists:
+% -------------------------------------------------
+\stopcontents[sections]
+\stoplist[appOutliers]{lof}
+\stoplist[appOutliers]{lot}
+\cleardoublepage
