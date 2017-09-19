@@ -1,5 +1,6 @@
 #' initialize a project
 #' @param path path
+#' @param proj_type project template type, default poppk
 #' @export
 init_project <- function(path = ".", proj_type = "poppk") {
   if (!dir.exists(path)) {

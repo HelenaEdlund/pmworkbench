@@ -3,4 +3,6 @@
 export("%>%")
 export(get_report_readme)
 export(init_project)
+export(is_dir)
+export(report_templates)
 importFrom(magrittr,"%>%")
