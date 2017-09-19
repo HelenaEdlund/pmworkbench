@@ -4,10 +4,12 @@
 \alias{init_project}
 \title{initialize a project}
 \usage{
-init_project(path = ".")
+init_project(path = ".", proj_type = "poppk")
 }
 \arguments{
 \item{path}{path}
+
+\item{proj_type}{project template type, default poppk}
 }
 \description{
 initialize a project
