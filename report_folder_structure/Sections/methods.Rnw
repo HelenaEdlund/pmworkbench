@@ -1,0 +1,269 @@
+% -------------------------------------------------
+% Methods
+% -------------------------------------------------
+\section{Methods} \label{sec:methods}
+
+% -------------------------------------------------
+% Changes in analysis plan
+% -------------------------------------------------
+\subsection{Changes in analysis plan} \label{subsec:methods:changesAnalysisPlan}
+There have been no changes to the analysis plan.
+
+% -------------------------------------------------
+% Subsection: Overview of analysis
+% -------------------------------------------------
+\subsection{General considerations and analysis overview} \label{subsec:methods:overview}
+% -------------------------------------------------
+% Instractions: 
+% Consider providing supportive text including references and hyperlinks to each section below.
+% -------------------------------------------------
+This analysis was performed according to the population PK analysis plan (\aref{app:analysisPlan}). The analysis was based on principles established in the ``Guidance for Industry Population Pharmacokinetics'' \cite{FDA1999} and ``Guidance on Reporting the Results of Population Pharmacokinetic Analyses'' \cite{EMA2007}.
+
+All data and model manipulation programs have been documented and archived in order to maintain an audit trail. A quality control check of any data and model manipulation processes was conducted and the resulting validation report archived together with the final analysis package.
+
+An overview of modelling steps is summarized in the flow chart \fref{fig:analysisOverview}.
+\begin{figure}[ht]
+\begin{center}
+\caption{Overview of the population PK analysis \label{fig:analysisOverview}}
+\includegraphics[width=0.5\textwidth]{exampleOverview.png}
+\end{center}
+\end{figure}
+
+% -------------------------------------------------
+% Subsection: Bio-analytical Method
+% -------------------------------------------------
+\subsection{Bio-analytical method} \label{subsec:methods:bioanalyticalMethod}
+Plasma samples collected for \Sexpr{drugName} analysis were assayed using liquid chromatographic-tandem mass spectrometric (LC-MS/MS) methods that were validated in accordance with current regulatory guidance. The lower limit of quantification (LLOQ) was \Sexpr{LLOQ}ng/mL for the analytical method used to analyse the plasma samples. 
+
+The specimen assays were conducted under the supervision of AstraZeneca (if outsourced). Bioanalytical reports are included as appendices to the clinical study reports of the respective studies. 
+% include a reference to the reports.
+
+% -------------------------------------------------
+% Subsection: Pharmacokinetic (PK) Model building
+% -------------------------------------------------
+\subsection{Pharmacokinetic (PK) model building} \label{subsec:methods:modelBuilding}
+
+\subsubsection{Prior experience} \label{subsubsec:methods:priorExperience}
+% -------------------------------------------------
+% Instructions: 
+% This part includes any previous experience in this compound and also provides information on how 
+% this information was used in this modelling activity. 
+% Also includes any high level information from NCA analysis (like linear/nonlinear pharmacokinetics). % If no prior modelling experience, including information from literature is also an option
+% -------------------------------------------------
+
+\subsubsection{Structural model} \label{subsubsec:methods:structuralModel}
+% -------------------------------------------------
+% Instructions: 
+% Suggestions
+% Description of models explored
+% Modelling assumptions
+% Bioavailability parameterization
+% Parameterization of different phases of pharmacokinetics
+% Covariates in the structural model
+% Other key steps in the structural model development which needs a description
+% -------------------------------------------------
+
+\subsubsection{Random effect model} \label{subsubsec:methods:randomEffectModel}
+\paragraph{Between subject variability and between-occasion variability}
+PK parameters, $P$, were implemented in the model such that the individual PK parameters are log-normally distributed. Mathematically, this means that the individual parameter $P_{i,k}$ is determined using an exponential model as follows:
+\begin{align*}
+P_{i,k} = TV_{P} \cdot exp(\eta_{i} + \tau_{k})
+\end{align*}
+where:
+
+$P_{i,k}$ is the true value of $P$ for the $i^{th}$ individual in the $k^{th}$ occasion;
+
+$TV_{P}$ is the typical/population value for parameter $P$;
+
+$\eta_{i}$ is the between subject random effect, describing the deviation of the $i^{th}$ individual's true value from the population value. $\eta_{i}$ are independent, identically distributed statistical errors with a mean of zero and a variance equal to $\omega^{2}$;
+
+$\tau_{k}$ is an between-occasion random effect, which is assumed to follow a Gaussian distribution with a mean of zero mean and variance $\pi^{2}$. It distinguishes the $k^{th}$ occasion PK parameter from the individual's typical value as predicted by the model.
+
+The models for BSV and BOV assume that the variance is constant with respect to the log of the typical value of the PK parameter. The apparent percent coefficient of variation (\%CV) for BSV and BOV will be computed as the square root of the parameter describing the respective variance.
+\begin{align*}
+\%CV_{BSV} &= \sqrt{\omega^{2}} \cdot 100 \\
+\%CV_{BOV} &= \sqrt{\pi^{2}} \cdot 100
+\end{align*}
+
+% Example text
+The multivariate vector of between-subject random effects (across parameters within each individual) has variance-covariance matrix $\Omega_{BSV}$. Initially BSV was incorporated on CL/F only. The BSV structure was expanded from there to identify the appropriate BSV model and estimate correlation between BSV parameters. When an appropriate BSV structure was found, BOV variability was considered. 
+
+\paragraph{Residual variability}
+The \Sexpr{drugName} plasma concentrations were transformed to a natural logarithm scale (ln). Initially, the residual variability was evaluated using an additive error model, approximating a proportional error model on the non-transformed scale.
+\begin{align*}
+lny_{i,j} = ln\hat{y}_{i,j} + \epsilon_{i,j}
+\end{align*}
+where:
+
+$lny_{i,j}$ is the $j_{th}$ measured log-transformed plasma concentration in the $i_{th}$ subject
+
+$ln\hat{y}_{i,j}$ is the corresponding log-transformed plasma concentration predicted from the specified model
+
+$\epsilon_{i,j}$ is the random variable representing the discrepancy between $lny_{i,j}$ and $ln\hat{y}_{i,j}$; $\epsilon_{i,j}$s are independent, identically distributed statistical errors with a mean of zero and variance of $\sigma^{2}$.
+
+An error model approximating a combined proportional and additive error model on the non-transformed scale was also examined.
+\begin{align*}
+lny_{i,j}    &= ln\hat{y}_{i,j} + \omega_{i,j} \cdot \epsilon_{i,j} \\
+\omega_{i,j} &= \sqrt{\sigma_{1}^{2} + \frac{\sigma_{2}^{2}}{y_{i,j}^{2}}}
+\end{align*}
+where:
+$\sigma_{1}^{2}$ and $\sigma_{2}^{2}$ are the cariabces of the proportional and additive errors of the residual variance, respectively.
+
+\subsubsection{Covariate model development}\label{subsubsec:methods:covariateModelDevelopment}
+% -------------------------------------------------
+% Instructions: 
+% Support the covariate model building.
+% Suggestions
+% List of covariates to be tested and the clinical relevance
+% Information on how the covariates were included (functional forms)
+% Criteria for covariate inclusion/exclusion
+% Criteria for covariate search
+% Criteria for retaining the covariate in the model (for example, \%RSE)
+% It would be useful to add more equations/coding to describe how the covariate relationship was included in the model
+% -------------------------------------------------
+Covariate screening was performed to evaluate the potential influence of pre-specified covariates on selected PK parameters. For covariates that were continuous in nature, scatter plots of EBE (post-hoc) estimates (random effect) against covariates overlaid with a LOESS smoother and/or regression line was used to help identify functional relationships. For covariates that were categorical in nature, box and whisker plots of individual (post-hoc) PK parameters for each of the groups were used to identify differences between groups.
+
+% Mock up text for step-wise modelling: 
+Identification of covariates was conducted using a step-wise covariate modelling (SCM) procedure as implemented within PsN. This procedure involves stepwise testing of linear and non-linear relationships in a forward inclusion ($\Delta$OFV of 6.63, $p<0.01$ for 1 DF) and backward exclusion ($\Delta$OFV of 10.8, $p<0.001$ for 1 DF) procedure. In case of categorical covariates, $\Delta$OFV at the respective p-values may be different depending on the degrees of freedom.
+
+Pre-specified covariates as listed in \tref{tab:preSpecCovariates} were selected based on physiological plausibility and/or prior knowledge. The proposed list of covariates was intended to be included in covariate testing if the available data support the planned evaluation. Specifically, categorical covariates were only to be included if at least 2 categories were presented and each represented nominally more than 10\% of the population.
+
+Retaining the covariate relationships identified by SCM was based on the reliability of the parameter estimate describing the covariate relationship (\%RSE $<$ 40) and only the covariate relationship that exerting a meaningful impact on the exposure was included in the model.
+
+\begin{table}
+\caption{\label{tab:preSpecCovariates} List of covariates investigated for their potential impact on the pharmacokinetic parameters}
+\begin{longtable}{p{6.5cm} p{6cm}} \hline 
+\textbf{Parameter} & \textbf{Covariates} \\ \hline \endhead
+Apparent Clearance, CL/F (L/h) & Age, Weight, Sex, Race, eGFR \\
+Apparent central volume, Vc/F (L) & Age, Weight, Sex, Race \\ \hline
+\end{longtable}
+\end{table}
+
+% Add: Mock up text for full modelling approach: 
+% Using the base model, a full covariate model was developed by including all covariates as necessary to support generation of a forest plot. 
+% The precision in the covariate effects or relationship was based on a bootstrap, the NONMEM variance-covariance matrix, or other techniques as appropriate. It should be noted that the full model approach primarily aimed to confirm lack of influence of covariates that were not included in the final model. 
+% The influence, or lack of influence, of the covariates on primary PK parameters was illustrated graphically (e.g with `forest plots').
+
+\paragraph{Mathematical representation of covariate-parameter relationships}
+Continuous covariates were evaluated using one or a combination of functional forms shown below, as appropriate.
+
+For linear relationships:
+\begin{align*}
+P_{i} = TV_{P} + P_{cov} \cdot (cov_{i} - cov_{median})
+\end{align*}
+For exponential relationships:
+\begin{align*}
+P_{i} = TV_{P} \cdot exp(P_{cov} \cdot (cov_{i} - cov_{median}))
+\end{align*}
+For power relationships:
+\begin{align*}
+P_{i} = TV_{P} \cdot \left(\frac{cov_{i}}{cov_{median}}\right)^{P_{cov}}
+\end{align*}
+where:
+
+$P_{i}$ is the estimated parameter, $P$, in the $i^{th}$ subject;
+
+$TV_{P}$ is the population parameter estimate for subjects with the median value of a particular covariate (cov);
+
+$P_{cov}$ is the estimate describing the change in the parameter value per unit change in a particular covariate for linear relationship; for exponential relationships it is the typical value estimate describing the change in the log parameter value per unit change in a particular covariate;
+
+$cov_{i}$ is the measured value of a particular covariate in the $i^{th}$ subject; and
+
+$cov_{median}$ is the median value of a particular covariate in the population.
+
+Dichotomous and categorical variables were evaluated as a proportional shift as follows:
+\begin{align*}
+P_{i} = TV_{P} \cdot (1+P_{cov} \cdot cov_{i})
+\end{align*}
+where:
+
+$P_{i}$ is the typical parameter value for subjects with $cov_{i}=0$;
+
+$TV_{P}$ is the estimated typical parameter, P, in the $i^{th}$ subject;
+
+$P_{cov}$ is the typical value additive increase or decrease in $TV_{P}$ for subjects with $cov_{i}=1$.
+
+$cov_{i}$ is the value of the covariate (either 0 or 1) defined for a specific dichotomous covariate in the $i^{th}$ subject;
+
+\subsubsection{Model discrimination} \label{subsubsec:methods:modelDiscrimination}
+Discrimination between models was mainly based on the inspection of graphical diagnostics and changes in the OFV provided by NONMEM. The difference in OFVs ($\Delta$OFVs) are nominally $\chi^{2}$-distributed and a difference of -3.84 (larger model - smaller model) corresponds to approximately a p-value of $<$0.05 for one DF, provided that the models are hierarchical. For a more complicated model to be retained it had to provide a significant improvement over the contending model ($p<0.05$ for nested models) and provide plausible parameter estimates that was not associated with excessively high RSEs. In case of non-nested models, Akaike Information Criterion (AIC) and Bayesian Information Criterion (BIC) values were used to discriminate between models.
+
+\subsubsection{Evaluation of shrinkage} \label{subsubsec:methods:evaluationOfShrinkage}
+Shrinkage in EBEs of model parameters used for diagnostic purposes was evaluated. The shrinkage increases from 0 towards 100\% as the EBEs become less informative. EBE based graphs and diagnostics are more reliable when shrinkage is small. A shrinkage of $<$20\% is generally considered as a low shrinkage. Shrinkage was taken into account when EBE based graphs and diagnostics were evaluated. Shrinkage magnitude in structural parameters ($\eta$-shrinkage) is defined as:
+\begin{align*}
+SHR_{\eta} = 1 - \frac{SD(\eta_{EBE,P})}{\omega_{P}}
+\end{align*}
+where:
+
+$SHR_{\eta}$ is shrinkage in model parameter $P$,
+
+$SD(\eta_{EBE,P})$ is the standard deviation (SD) of the individual EBEs of between subject or between-occasional variability in parameter $P$; and
+
+$\omega_{P}$ is the model estimate of the SD in between subject or between-occasional variability associated with parameter $P$.
+
+Shrinkage in residual variability ($\epsilon$-shrinkage) is defined, as:
+\begin{align*}
+SHR_{\epsilon} = 1 - SD(IWRES)
+\end{align*}
+where:
+
+$SHR_{\epsilon}$ is shrinkage in residual error; and
+
+$SD(IWRES)$ is the SD of the IWRES, which is defined as individual residual variability weighted by the standard deviation of the residual variability ($\sigma$). The residual variability is defined as the difference between, $Y_{i,j}$, the observation in the $i_{th}$ individual at sampling time $j$, and $Y*_{i,j}$, the corresponding model prediction.
+
+% -------------------------------------------------
+% Subsection: Estimation Methods and BLQ Handling
+% -------------------------------------------------
+\subsection{Estimation methods and BLQ handling} \label{subsec:methods:estimationMethodsAndBLQ}
+First order conditional estimation (FOCE) with interaction was used as parameter estimation algorithm in NONMEM. 
+
+% If needed:
+% Since the percentage of BLQ samples present in the dataset were found to be rather high, another BLQ handling method (M3) was used on key models identified in the previous steps \cite{Ahn2008}. The results from the two different approaches were compared to investigate if any substantial differences in the characterization of the dose-concentration relationship had been introduced by exclusion of BLQ samples. A substantial difference was defined in the analysis plan as introducing a change of $>$15\% in key PK parameter estimates. FOCE with interaction and Laplacian estimation was used for runs using M3 as BLQ handling method.
+
+% -------------------------------------------------
+% Subsection: Model Evaluation
+% -------------------------------------------------
+\subsection{Model evaluation} \label{subsec:methods:modelEval}
+Model evaluation included graphical analysis of goodness-of-fit (GOF) plots, relative standard errors (RSEs) and visual predictive checks (VPCs). Stratification, e.g. dose, visit or covariates, was used when appropriate to ensure that the models perform adequately across important sub-groups of the data. GOF plots included the standard set of dependent variable (DV) vs population predictions (PRED), DV vs individual predictions (IPRED), CWRES vs PRED, CWRES vs time, absolute individual weighted residuals (IWRES) vs time, and absolute IWRES vs IPRED.
+
+\subsubsection{Visual predictive checks} \label{subsubsec:methods:VPC}
+The adequacy of the model was evaluated using a simulation-based visual predictive check method. The model was used to simulate 1000 replicates of the analysis dataset with NONMEM. % in R?
+Statistics of interest was calculated from the simulated and observed data for comparison; for example, the 5\textsuperscript{th}, 50\textsuperscript{th} (median), and 95\textsuperscript{th} percentiles of the distributions of the simulated concentration at each sampling time bin were calculated. These percentiles of the simulated data were plotted versus time since last dose, with the original observed dataset and/or percentiles based on the observed data overlaid to visually assess concordance between the model-based simulated data and the observed data.
+
+\subsubsection{Nonparametric bootstrap} \label{subsubsec:methods:bootstrap}
+Using the bootstrap resampling technique, bootstrap replicates were generated by sampling randomly from the original dataset with replacement. One thousand replicate datasets were obtained using the ``bootstrap'' option in the software package PsN. This resampling was stratified based on the different studies included. Parameter estimates for each of the re-sampled datasets were obtained by fitting the final model using NONMEM. Non-parametric confidence intervals of the parameter estimates were derived.
+
+\subsubsection{Other} \label{subsubsec:methods:otherEvaluation}
+% Provide details of any other model evaluation procedures, if performed. For example, external validation.
+
+\subsubsection{Empirical Bayes estimates of the individual PK parameters and exposures} \label{subsubsec:methods:EBEs}
+% -------------------------------------------------
+% Instructions: 
+% Suggestions
+% Add details of methods used to calculate derived PK parameters
+% -------------------------------------------------
+Empirical Bayes estimates (EBE) of \Sexpr{drugName} was estimated for all patients using NONMEM. The EBE was based on the final models, the individual covariates and the individual plasma concentration measurements of \Sexpr{drugName}. For patients that did not have any measurements of \Sexpr{drugName} concentrations the typical PK parameter values where derived based on individual covariates and the final models.
+
+% -------------------------------------------------
+% Simulations
+% -------------------------------------------------
+\subsection{Simulations} \label{subsec:methods:simulations}
+% -------------------------------------------------
+% Instructions: 
+% This section may be used to illustrate methodology used to perform simulations to answer or support modelling questions. 
+% If R, SAS or any scripting language use to process or present this simulation, please provide the code in an appendix.
+% Predictions/simulation of individual primary or derived parameters and graphically depict relationship between predicted/simulated PK parameters to efficacy or safety measures.
+% Simulation of derived PK parameters stratified by different covariates/dose/dosing schedules
+% The influence, or lack of influence, of the covariates on derived PK parameters (for example, AUC and Cmax).
+% -------------------------------------------------
+
+% -------------------------------------------------
+% Hardware and software
+% -------------------------------------------------
+\subsection{Hardware and software details} \label{subsec:methods:hardwareSoftware}
+Pharmacometric data preparations were conducted using SAS (SAS Institute) Software version 9.4 (TS1M3) on a Windows X64_SRV12 WIN 6.2.9200 Server (Microsoft Corporation).
+
+All population analyses were performed using software package NONMEM, version $<< 7.3.0 | 7.2.0 | 6.2.0 >>$ (Icon Development Solutions, Ellicott City, MD, USA, 2009). Model fitting was performed in a Linux environment (CentOS 5, equivalent to Redhat Enterprise Linux 5) with GFortran FORTRAN Compiler, version 4.7.3 (Gnu Compiler Collection, GCC).
+
+% This should preferably be extracted from the environment (tarjs tidyproject check?)
+PsN, version $<< 4.4.8 | 4.2.0 | 3.5.3 >>$ (psn.sourceforge.net) was used to execute the NONMEM runs \cite{Lindbom2004}. R, version $<< 3.1.1 | 3.1 | 3.0 | 2.15 >>$ (\url{www.r-project.org}), was used for data processing, exploratory graphical analysis, model diagnostics and statistical summaries. Used R libraries included: dplyr (v. 0.5) \cite{Wickham2016a}, GGally (v. 1.2.0) \cite{Schloerke2016}, ggplot2 (v. 2.1.0) \cite{Wickham2009}, gridExtra \cite{Auguie2016}, plyr (v. 1.8.4) \cite{Wickham2011}, PKNCA (v.0.7.1) \cite{Denney2016}, reshape2 (v. 1.4.2) \cite{Wickham2007}, stringr (v. 1.1.0) \cite{Wickham2016b}, xpose4 (v. 4.5.3) \cite{Jonsson1999}, and zoo (v. 1.7-13) \cite{Zeileis2005}. This report was generated using \LaTeX~ (v. ) and knitr (v. ) \cite{Xie2014}.

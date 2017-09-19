@@ -1,0 +1,56 @@
+% -------------------------------------------------
+% Appendix setup 
+% -------------------------------------------------
+% Start a partial table of content, list of tables and list of figures. 
+\startcontents[sections]
+\startlist[appIndividual]{lof}
+\startlist[appIndividual]{lot}
+
+\azappendix{Plots depicting closeness of model predictions to observations on individual basis} \label{app:individualPlots} 
+
+\printcontents[sections]{l}{1}{\section*{\contentsname}}
+\printlist[appIndividual]{lot}{}{\section*{\listtablename}}
+\printlist[appIndividual]{lof}{}{\section*{\listfigurename}}
+\cleardoublepage
+
+% -------------------------------------------------
+% Start writing appendix here
+% -------------------------------------------------
+\subsection{Base model}
+\begin{figure}
+\begin{center}
+\caption{Selected individual fits: 12 worst fits based on CWRES \label{fig:baseIndividualWorst}}
+Include grahics here.
+\end{center}
+\end{figure}
+
+\begin{figure}
+\begin{center}
+\caption{Selected individual fits: 12 best fits based on CWRES \label{fig:baseIndividualBest}}
+Include grahics here.
+\end{center}
+\end{figure}
+
+
+\subsection{Final model}
+\begin{figure}
+\begin{center}
+\caption{Selected individual fits: 12 worst fits based on CWRES \label{fig:finalIndividualWorst}}
+Include grahics here.
+\end{center}
+\end{figure}
+
+\begin{figure}
+\begin{center}
+\caption{Selected individual fits: 12 best fits based on CWRES \label{fig:finalIndividualBest}}
+Include grahics here.
+\end{center}
+\end{figure}
+
+% -------------------------------------------------
+% Stop writing appendix here, end the adding to the lists:
+% -------------------------------------------------
+\stopcontents[sections]
+\stoplist[appIndividual]{lof}
+\stoplist[appIndividual]{lot}
+\cleardoublepage

@@ -1,0 +1,30 @@
+% un-numbered section + manually add to toc
+\section*{Executive summary}\label{sec:executiveSummary}
+\phantomsection \addcontentsline{toc}{section}{Executive summary}
+
+% -------------------------------------------------
+% Instructions
+% -------------------------------------------------
+% This section includes an overview of the analysis including Objectives, 
+% Data, Model Development, Results and Conclusion
+% The primary audience for this section: non-technical reader, stakeholders
+%
+% Suggestions:
+% Limit to 2 pages
+% Objectives of the analysis
+% Overview on Data and Methodology
+% Highlight the main outcome in the result section (should converse to the conclusion section)
+%     * Structural model 
+%     * Key covariate relationship
+%     * Overall, impact of the analysis
+%     * Key inference from the derived PK parameters (AUC/$C_{max}$/$C_{ss}$)
+%     *	Any dose recommendations
+%     * Key plot is advisable, if drives the decision making
+% PK parameter estimates need not to be listed, unless otherwise makes an impact on the conclusion
+% Conclusions should be same as in the conclusion section
+%     * Simple words, reduce technical jargons
+% Please note that excerpt or verbatim from this section could potentially be used in `regulatory related summary' documents.
+%
+% -------------------------------------------------
+% Start writing your summery here
+% -------------------------------------------------

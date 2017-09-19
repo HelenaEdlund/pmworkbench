@@ -5,31 +5,44 @@
 % Note: file size of a single PDF file is limited to 100 Megabyte (MB). 
 
 % -------------------------------------------------
+% knitr opts
+% -------------------------------------------------
+<<setup,echo=F,warning=F,message=F>>=
+# Load package to find root directory
+library(rprojroot)
+# Dont echo the R code by default
+knitr::opts_chunk$set(echo=F)
+# Knit document from project level dir and 
+knitr::opts_knit$set(root.dir=find_root(has_file("OpenProject.Rproj"))) 
+# Do *not* use setwd within the script, it will not work.
+@ 
+
+% -------------------------------------------------
 % Setup R environment
 % -------------------------------------------------
-% When compling/knitting this fiel a new R session is started and 
-% the working directory is set to where the file is located.
-% Hence, all paths in "main" should be relative to the Report folder and 
-% all paths in sections and appendices should be relative to these folders
-% Do *not* use setwd within the script, it will not work properly.
+% When compling/knitting this file a new R session is started. 
+% Your global environment is not available
 <<environmentPrep,echo=F,warning=F,message=F>>=
-source('Setup/environmentPrep.R')
+# source your .Rprofile to configure the Project Libraries
+source(file.path(find_root(has_file("OpenProject.Rproj")), ".Rprofile"))
+source(file.path('Report','Setup','environmentPrep.R'))
 @ 
 
 % -------------------------------------------------
 % Specify paths to images (EDA, BaseModel, CovModel)
 % -------------------------------------------------
 \graphicspath{
-{\Sexpr{paste(paste0(".", resEDADir,"/"))}}  % add a . to go up one level
-{\Sexpr{paste(paste0(".", resBaseModelDir,"/"))}}
-{\Sexpr{paste(paste0(".", resCovModelDir,"/"))}}
+{\Sexpr{file.path(paste0(".",resEDADir),"")}}  % "" at the end to ensure a trailing /
+{\Sexpr{file.path(paste0(".",resBaseModelDir),"")}}
+{\Sexpr{file.path(paste0(".",resCovModelDir),"")}}
 {Images/} % other images, e.g. AZ logo
 }
 
 % -------------------------------------------------
 % Load report-specific variables
 % -------------------------------------------------
-\Sexpr{knit_child('./Setup/setup.Rnw')}
+<<projVars, child='./Setup/setup.Rnw'>>=
+@
 
 % -------------------------------------------------
 % Start of report
@@ -48,7 +61,7 @@ source('Setup/environmentPrep.R')
 % TOC
 % -------------------------------------------------
 % add TOC to toc
-\phantomsection \addcontentsline{toc}{section}{\contentsname} 
+\phantomsection \addcontentsline{toc}{section}{\contentsname}
 \printcontents[sections]{}{1}
   {\section*{\contentsname} \thispagestyle{followingpage} \setlength{\parskip}{0pt}}
 
@@ -67,39 +80,48 @@ source('Setup/environmentPrep.R')
 % -------------------------------------------------
 \listofapp
 \cleardoublepage
-
+ 
 % -------------------------------------------------
 % List of abbreviations and special terms
 % -------------------------------------------------
-\Sexpr{knit_child('./Sections/abbreviations.Rnw')}
+<<abbreviations, child='./Sections/abbreviations.Rnw'>>=
+@
 
 % -------------------------------------------------
 % Executive summary
 % -------------------------------------------------
-\Sexpr{knit_child('./Sections/executiveSummary.Rnw')}
+<<executiveSummary, child='./Sections/executiveSummary.Rnw'>>=
+@
 
 % -------------------------------------------------
-% Include sections
+% Main text sections
 % -------------------------------------------------
-\Sexpr{knit_child('./Sections/introduction.Rnw')}
- 
-\Sexpr{knit_child('./Sections/objectives.Rnw')}
+<<introduction, child='./Sections/introduction.Rnw'>>=
+@
 
-\Sexpr{knit_child('./Sections/data.Rnw')}
+<<objectives, child='./Sections/objectives.Rnw'>>=
+@
 
-\Sexpr{knit_child('./Sections/methods.Rnw')}
- 
-\Sexpr{knit_child('./Sections/results.Rnw')}
- 
-\Sexpr{knit_child('./Sections/discussion.Rnw')}
- 
-\Sexpr{knit_child('./Sections/conclusions.Rnw')}
+<<data, child='./Sections/data.Rnw'>>=
+@
+
+<<methods, child='./Sections/methods.Rnw'>>=
+@
+
+<<results, child='./Sections/results.Rnw'>>=
+@
+
+<<discussion, child='./Sections/discussion.Rnw'>>=
+@
+
+<<conclusions, child='./Sections/conclusions.Rnw'>>=
+@
 
 % -------------------------------------------------
-% Include Bibliography
+% Bibliography
 % -------------------------------------------------
-\bibliographystyle{unsrtnat}		% style of bib 
-\bibliography{references} 			% name without the .bib 
+\bibliographystyle{unsrtnat}		% style of bib
+\bibliography{references} 			% name without the .bib
 \cleardoublepage
 
 % Stop the main TOC, LOF and LOT
@@ -108,39 +130,53 @@ source('Setup/environmentPrep.R')
 \stoplist[main]{lot}
 
 % -------------------------------------------------
-% Include appendices
+% Appendices
 % -------------------------------------------------
 % Tell latex that these sections are appendices
 % (reset counters to A,B,C etc)
-\appendices  
+\appendices
 
-\Sexpr{knit_child('./Appendices/analysisPlan.Rnw')}
-\cleardoublepage
-\Sexpr{knit_child('./Appendices/dataSpecFile.Rnw')}
-\cleardoublepage
-\Sexpr{knit_child('./Appendices/dataIssuesAndHandling.Rnw')}
-\cleardoublepage
-\Sexpr{knit_child('./Appendices/additionalEDA.Rnw')}
-\cleardoublepage
-\Sexpr{knit_child('./Appendices/parameterEstimatesKeyModels.Rnw')}
-\cleardoublepage
-\Sexpr{knit_child('./Appendices/GOFplots.Rnw')}
-\cleardoublepage
-\Sexpr{knit_child('./Appendices/baseModelOutputFile.Rnw')}
-\cleardoublepage
-\Sexpr{knit_child('./Appendices/SCMOutputFile.Rnw')}
-\cleardoublepage
-\Sexpr{knit_child('./Appendices/plotsForAppropriatenessFinalModel.Rnw')}
-\cleardoublepage
-\Sexpr{knit_child('./Appendices/finalModelOutputFile.Rnw')}
-\cleardoublepage
-\Sexpr{knit_child('./Appendices/individualPlots.Rnw')}
-\cleardoublepage
-\Sexpr{knit_child('./Appendices/outliers.Rnw')}
-\cleardoublepage
-\Sexpr{knit_child('./Appendices/additionalVPC.Rnw')}
-\cleardoublepage
-\Sexpr{knit_child('./Appendices/bootstrapAnalysis.Rnw')}
+<<analysisPlan, child='./Appendices/analysisPlan.Rnw'>>=
+@
+
+<<dataSpecFile, child='./Appendices/dataSpecFile.Rnw'>>=
+@
+
+<<dataIssuesAndHandling, child='./Appendices/dataIssuesAndHandling.Rnw'>>=
+@
+
+<<additionalEDA, child='./Appendices/additionalEDA.Rnw'>>=
+@
+
+<<parameterEstimatesKeyModels, child='./Appendices/parameterEstimatesKeyModels.Rnw'>>=
+@
+
+<<GOFplots, child='./Appendices/GOFplots.Rnw'>>=
+@
+
+<<baseModelOutputFile, child='./Appendices/baseModelOutputFile.Rnw'>>=
+@
+
+<<SCMOutputFile, child='./Appendices/SCMOutputFile.Rnw'>>=
+@
+
+<<plotsForAppropriatenessFinalModel, child='./Appendices/plotsForAppropriatenessFinalModel.Rnw'>>=
+@
+
+<<finalModelOutputFile, child='./Appendices/finalModelOutputFile.Rnw'>>=
+@
+
+<<individualPlots, child='./Appendices/individualPlots.Rnw'>>=
+@
+
+<<outliers, child='./Appendices/outliers.Rnw'>>=
+@
+
+<<additionalVPC, child='./Appendices/additionalVPC.Rnw'>>=
+@
+
+<<bootstrapAnalysis, child='./Appendices/bootstrapAnalysis.Rnw'>>=
+@
 
 % -------------------------------------------------
 % End of report

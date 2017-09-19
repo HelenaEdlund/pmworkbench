@@ -1,0 +1,19 @@
+\section{Introduction}\label{sec:introduction}
+% -------------------------------------------------
+% Instructions
+% -------------------------------------------------
+% The primary audience for this section: non-technical reader, other stakeholders. 
+% This section includes the background and motivation of the analysis. 
+% Preferably, limit section to one page (and strictly not more than two pages)
+% 
+% Suggestions:
+% Background information of the compound (including short history of the program)
+% Background information of the target and indications (preferably add a diagram)
+% Background information about the studies involved in this analysis (very short summary)
+% Motivation of the analysis, navigation text (reference, link) on previous analysis/outcomes
+% Expected value addition of this analysis
+% Impact of this analysis (in relation to the motivation)
+%
+% -------------------------------------------------
+% Start writing your introduction here
+% -------------------------------------------------

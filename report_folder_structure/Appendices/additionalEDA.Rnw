@@ -1,0 +1,180 @@
+% -------------------------------------------------
+% Appendix setup 
+% -------------------------------------------------
+% Start a partial table of content, list of tables and list of figures. 
+\startcontents[sections]
+\startlist[appEDA]{lof}
+\startlist[appEDA]{lot}
+
+\azappendix{Additional data exploratory plots and summary tables}\label{app:additionalEDA} 
+
+\printcontents[sections]{l}{1}{\section*{\contentsname}}
+\printlist[appEDA]{lot}{}{\section*{\listtablename}}
+\printlist[appEDA]{lof}{}{\section*{\listfigurename}}
+\cleardoublepage
+
+% -------------------------------------------------
+% Start writing appendix here
+% -------------------------------------------------
+\subsection{Summary of demographic data by study}
+\tref{tab:contCovByStudy} and \tref{tab:catCovByStudy} provides the continuous and categorical demographic characteristics of subjects by study.
+
+<<contCovByStudy, results='asis',echo=F,warning=F,message=F>>=
+# Code to summarize this dataframe in s06_exploratoryDataAnalysis.R
+ContTabByStudy <-
+  read.csv(file=file.path(resEDADir,
+                      paste0("ContTab_ByStudy_", deliveryDate,".csv")),
+           stringsAsFactors = F)
+
+contTabByStudyLatex <- 
+  aztable(ContTabByStudy, 
+          caption="Summary of baseline continuous covariates by study", 
+          label="contCovByStudy") %>% 
+  sprinkle_colnames(Study = "Study", 
+                    Characteristic="Characteristics",
+                    Values="Values*",
+                    NMissing="Missing (N (\\%))")
+print(contTabByStudyLatex)
+# add footnote *mean (standard deviation), [range]  
+@
+
+<<catCovByStudy, results='asis',echo=F,warning=F,message=F>>=
+catTabByStudy <- 
+  read.csv(file=file.path(resEDADir,
+                          paste0("CatTab_ByStudy_",deliveryDate,".csv")),
+           stringsAsFactors = F)
+
+catTabByStudyLatex <-
+  aztable(catTabByStudy,
+          caption="Summary of baseline categorial covariates by study",
+          label="catCovByStudy") %>%
+  sprinkle_colnames(Study="Study", 
+                    Characteristic="Characteristic",
+                    Category="Category",
+                    values="N (\\%)")
+print(catTabByStudyLatex)
+# add footnote *mean (standard deviation), [range]  
+@
+
+\subsection{Plots of \Sexpr{drugName} vs. time after dose}
+
+\begin{figure}[ht] \label{appfig:concVsTAD}
+\caption{Correlations between covariates.}
+\begin{center}
+% \includegraphics[width=\textwidth]{vpc\string_Run007\string_predcorr.png}
+\end{center}
+\end{figure}
+
+% ```{r, include=F}
+% # Study and dose split
+% concData$Split <- paste0("Study: ", concData$OSTUDYID,", Dose: ",  concData$DOSE," mg")
+% concData$Split <- 
+%   factor(concData$Split, levels =
+%            c("Study: ACE-HV-001, Dose: 25 mg","Study: ACE-HV-001, Dose: 50 mg",
+%              "Study: ACE-HV-001, Dose: 75 mg","Study: ACE-HV-001, Dose: 100 mg",
+%              "Study: ACE-HV-004, Dose: 100 mg","Study: ACE-HV-005, Dose: 100 mg",
+%              "Study: ACE-HV-005, Dose: 400 mg","Study: ACE-HV-007, Dose: 15 mg",
+%              "Study: ACE-HV-008, Dose: 25 mg","Study: ACE-HV-111, Dose: 15 mg",
+%              "Study: ACE-HV-111, Dose: 30 mg","Study: ACE-CL-001, Dose: 100 mg",
+%              "Study: ACE-CL-001, Dose: 175 mg","Study: ACE-CL-001, Dose: 200 mg",
+%              "Study: ACE-CL-001, Dose: 250 mg","Study: ACE-CL-001, Dose: 400 mg",
+%              "Study: ACE-LY-004, Dose: 100 mg","Study: ACE-WM-001, Dose: 100 mg",
+%              "Study: ACE-WM-001, Dose: 200 mg","Study: ACE-LY-002, Dose: 100 mg",
+%              "Study: ACE-LY-003, Dose: 100 mg","Study: ACE-MY-001, Dose: 100 mg"))
+% concDataSplit <- split(concData, concData$Split)
+% settings <-
+%   theme(
+%     axis.title = element_text(size=10),
+%     axis.text = element_text(size=10),
+%     strip.text = element_text(size=10, face="bold"))
+% 
+% plots <- vector("list", length(concDataSplit))
+% for(i in 1:length(concDataSplit)){
+%   p <- 
+%     arrangeGrob(
+%       ggplot(data=concDataSplit[[i]], aes(x=TAPD, y=DV, colour=factor(NMSEQSID))) + 
+%         geom_point(aes(shape=BLQ), size=3) + 
+%         # no line for sparse
+%         geom_line(data=concDataSplit[[i]][!is.na(concDataSplit[[i]]$ID.OCC),],
+%                   aes(x=TAPD, y=DV, colour=factor(NMSEQSID), group=ID.OCC), 
+%                   inherit.aes = F) + 
+%         geom_hline(aes(yintercept=1), linetype="dashed", col="blue") +
+%         guides(shape="none", colour="none") +
+%         scale_shape_manual(values = c(1, 4)) + 
+%         coord_cartesian(xlim=c(0, 25)) +
+%         facet_wrap(~Split) +
+%         labs(x="Time after dose (h)", y="Acalabrutinib concentration (ng/mL)") +
+%         settings,
+%       ggplot(data=concDataSplit[[i]], aes(x=TAPD, y=DV, colour=factor(NMSEQSID))) + 
+%         geom_point(aes(shape=BLQ), size=3) + 
+%         # no line for sparse
+%         geom_line(data=concDataSplit[[i]][!is.na(concDataSplit[[i]]$ID.OCC),],
+%                   aes(x=TAPD, y=DV, colour=factor(NMSEQSID), group=ID.OCC), 
+%                   inherit.aes = F) + 
+%         geom_hline(aes(yintercept=1), linetype="dashed", col="blue") +
+%         scale_y_log10() + 
+%         coord_cartesian(xlim=c(0, 25)) +
+%         guides(shape="none", colour="none") +
+%         scale_shape_manual(values = c(1, 4)) + 
+%         facet_wrap(~Split) +
+%         labs(x="Time after dose (h)", y="Acalabrutinib concentration (ng/mL)") +
+%         settings, 
+%       nrow=2)
+%   plots[[i]] <- p
+% }
+% ```
+% 
+% ```{r, fig.width=6.8, fig.height=5.5}
+% invisible(lapply(plots, myGridDraw))
+% ```
+% 
+% ## `r paste0(LETTERS[rawdataApp$No],'.3')` Assessment of sample times of BLQ samples {-}
+% ```{r, include=F}
+% plots <- vector("list", length(concDataSplit))
+% for(i in 1:length(concDataSplit)){
+%   p <- 
+%     ggplot(data=concDataSplit[[i]], aes(x=TAPD)) + 
+%     geom_histogram(binwidth=1) + facet_wrap(Split~BLQ) + 
+%     # Note: drop =F does not work, includes all factor levels
+%     labs(x="Time after dose (h)", y="Count") +
+%     settings
+%   plots[[i]] <- p
+% }
+% ```
+% The following plots show histograms of sampling times (time after dose), stratified by study and dose group. Left panels show information for concentration samples above LLOQ and right panels show information for BLQ samples. 
+% 
+% The follow-up time in ACE-HV-001 was long relative the half-life of the drug, resulting in many sequential BLQ samples. Further, collection of pre-dose samples in studies with cross-over design and a second PK assessment (and potentially missing dose records at steady state in patient studies), long follow up times are observed for some studies and dose groups.
+% 
+% The results in the plots show that there is some delay in absorption leading to BLQ samples in the first hour. After that, the fraction of BLQ samples increases with increasing time post previous dose (as is to be expected) up to approximately 20 hours after when there is very few non-BLQ samples left.
+% 
+% ```{r, fig.width=7, fig.height=2.5}
+% invisible(lapply(plots, myGridDraw))
+% ```
+
+\subsection{Assessment of sample times of BLQ samples}
+% The following plots show histograms of sampling times (time after dose), stratified by study and dose group. Left panels show information for concentration samples above LLOQ and right panels show information for BLQ samples. 
+% 
+% The follow-up time in ACE-HV-001 was long relative the half-life of the drug, resulting in many sequential BLQ samples. Further, collection of pre-dose samples in studies with cross-over design and a second PK assessment (and potentially missing dose records at steady state in patient studies), long follow up times are observed for some studies and dose groups.
+% 
+% The results in the plots show that there is some delay in absorption leading to BLQ samples in the first hour. After that, the fraction of BLQ samples increases with increasing time post previous dose (as is to be expected) up to approximately 20 hours after when there is very few non-BLQ samples left.
+
+% ## `r paste0(LETTERS[rawdataApp$No],'.3')` Assessment of sample times of BLQ samples {-}
+% ```{r, include=F}
+% plots <- vector("list", length(concDataSplit))
+% for(i in 1:length(concDataSplit)){
+%   p <- 
+%     ggplot(data=concDataSplit[[i]], aes(x=TAPD)) + 
+%     geom_histogram(binwidth=1) + facet_wrap(Split~BLQ) + 
+%     # Note: drop =F does not work, includes all factor levels
+%     labs(x="Time after dose (h)", y="Count") +
+%     settings
+%   plots[[i]] <- p
+% }
+
+% -------------------------------------------------
+% Stop writing appendix here, end the adding to the lists:
+% -------------------------------------------------
+\stopcontents[sections]
+\stoplist[appEDA]{lof}
+\stoplist[appEDA]{lot}
+\cleardoublepage
