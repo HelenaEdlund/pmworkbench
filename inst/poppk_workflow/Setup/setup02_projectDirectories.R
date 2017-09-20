@@ -1,9 +1,10 @@
 ###################################################
 # setup02_projectDirectories.R
 # 
-# Author: Helena Edlund
-# Created on: 2017-08-04
-# Description: Define all project directories relative to the activity dir
+# Author: 
+# Created on: 
+# Description: Define all project directories relative to the top level dir
+#              This folder structure are the default for the AZ knowledge management
 # Dependencies: None
 ###################################################
 
@@ -23,8 +24,8 @@ setupDir            <- file.path(scriptsDir,"Setup")
 functionsDir        <- file.path(scriptsDir,"Functions")
 
 # Model dir
-baseModelDir        <- file.path(modelDir, "BaseModel")        # Base models
-covariateModelDir   <- file.path(modelDir, "CovariateModel")   # Covariate models
+baseModelDir        <- file.path(modelDir, "BaseModel")        
+covariateModelDir   <- file.path(modelDir, "CovariateModel")   
 
 # Result dir
 resOtherDir         <- file.path(resultsDir, "Other")

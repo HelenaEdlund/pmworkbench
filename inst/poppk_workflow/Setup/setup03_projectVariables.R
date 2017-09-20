@@ -1,29 +1,49 @@
 ###################################################
 # setup03_projectVariables.R
 # 
-# Author: Helena Edlund
-# Created on: 2017-03-23
-# Description: set variables used through out project
+# Author: 
+# Created on: 
+# Description: set variables used throughout workflow
 # Dependencies: None
 ###################################################
 
-drugName <- "AZDTest"
+# Note, this script is a little bit of a mixbag for reporting and workflow. 
+# Should probably be splitted into the appropriate parts. 
 
-analystName <- "A Pharmacometrican"
-reviewerName <- "Another Pharmacometrican"
-approverName <- "Someone from LT"
-programmerName <- "QCP programming group" # or specific?
+# The column names etc used below are default from the AZ data standards. 
+# That is, it will need to be updated depending on the present data structure   
 
-# Source dataset file name and delivery date
-sourcedataFileName      <- "AZDTest_20170918.csv"
-deliveryDate  <- 
-  paste(str_extract_all(sourcedataFileName, pattern ="[:digit:]")[[1]], collapse = "")
-dataSpecFileName        <- "qcpVariablesSpecification.csv"
-  
 # ------------------------------------------------------------------
-#  List columns of the dataset to be used in dataset checkout and EDA
+#  People
+# ------------------------------------------------------------------
+analystName <- "Analyst"
+reviewerName <- "Reviewer"
+approverName <- "Approver"
+programmerName <- "Programmer" 
+
+# ------------------------------------------------------------------
+#  Data
 # ------------------------------------------------------------------
 
+# --------------------
+#  Analysis dataset
+# --------------------
+analysisDataFileName      <- "filename_deliverydate.csv"
+deliveryDate  <- "deliverydate"
+# # or extract from filename it contains deliverydate:
+# deliveryDate  <- 
+#   paste(str_extract_all(sourcedataFileName, pattern ="[:digit:]")[[1]], collapse = "")
+dataSpecFileName        <- "dataSpecFileName.csv" # used by pmxplore::r_data_structure
+
+# --------------------
+#  Drug and lloq
+# --------------------
+drugName <- "DrugName"
+LLOQ <- 1
+
+# --------------------
+#  Columns in data (used in dataset checkout and EDA)
+# --------------------
 # Define variables as they are expected to be based on protocol and data spec
 ostudies <- c("d0000c0001","d0000c0002")   # original names of studies that should be included
 studies  <- c(1,2)            # numeric version 
@@ -53,19 +73,13 @@ bContCov <- c("AGE","BSCR","BEGFR","BWT","BHT","BBMI")
 
 allCols <- c(studyRelatedCols, numericCols, factorCols, bCatCov, bContCov)
 
-# Define the reported LLOQ
-LLOQ <- 1
-
 # ------------------------------------------------------------------
 #  List lables and settings for plots used in EDA
 # ------------------------------------------------------------------
-res <- 300
-
 # Reoccuring labels
 labTAPD <- "Time after dose (h)"
 labTAFD <- "Time after first dose (h)"
 labConc <- "AZDTest concentration (ng/mL)"
 
-# Reoccuring x-axis breaks
-tapdBreaks <- c(0, 2, 4, 6, 8, 
-               seq(from=12, to=200, by=6))
+# Re-occuring x-axis breaks
+tapdBreaks <- c(0, 2, 4, 6, 8, seq(from=12, to=200, by=6))
