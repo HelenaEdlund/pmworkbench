@@ -26,9 +26,9 @@ programmerName <- "Programmer"
 # ------------------------------------------------------------------
 
 # --------------------
-#  Analysis dataset
+#  Source dataset
 # --------------------
-analysisDataFileName      <- "filename_deliverydate.csv"
+sourcedataFileName      <- "filename_deliverydate.csv"
 deliveryDate  <- "deliverydate"
 # # or extract from filename it contains deliverydate:
 # deliveryDate  <- 

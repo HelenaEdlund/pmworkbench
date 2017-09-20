@@ -1,7 +1,7 @@
 ---
 title: "Exploratory data analysis: Covariates"
-author: ""
-date: "2017-09-01"
+author: "Author"
+date: "Date"
 output: 
   html_document:
     toc: true
@@ -48,6 +48,7 @@ params$printResults
 # Baseline covariates
 ## Numeric summaries
 ### Entire dataset
+The markdown/latex notation for tables does not work for html output. Notified the authour of pixidust.
 ```{r contTab, warning=F, message=F}
 # 1. Continous covariates
 continousCovariates <- 

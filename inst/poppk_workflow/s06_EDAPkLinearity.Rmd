@@ -1,7 +1,7 @@
 ---
 title: "Exploratory data analysis: PK Linearity"
-author: "Helena Edlund"
-date: "2017-09-18"
+author: "Author"
+date: ""
 output: 
   html_document:
     toc: true

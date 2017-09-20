@@ -1,7 +1,7 @@
 ---
 title: "Summary of excluded and commented data"
-author: "Helena Edlund"
-date: "2017-09-18"
+author: "Author"
+date: "Date"
 output: html_document
 params:
   printResults: FALSE

@@ -1,7 +1,7 @@
 ---
 title: "Dataset review"
-author: "Helena Edlund"
-date: "2017-09-19"
+author: "Author"
+date: "Date"
 output: html_document
 ---
 ```{r setup, include=FALSE}

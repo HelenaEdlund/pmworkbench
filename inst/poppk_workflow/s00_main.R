@@ -1,10 +1,9 @@
 ###################################################
 # s00_main.R
 # 
-# Author: Helena Edlund
-# Created on: 2017-03-21
-# Last modified on: 2017-08-02
-# Description: Make file for automatic population PK analysis
+# Author: 
+# Created on: 
+# Description: Make file for population PK analysis workflow
 # Dependencies: None
 ###################################################
 # When starting a new project, run make_project() and open the 
