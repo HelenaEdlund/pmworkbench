@@ -6,14 +6,15 @@ Authors@R: c(
     person("helena", "edlund", email = "helena.edlund@astrazeneca.com", role = c("aut", "cre")),
     person("devin", "pastoor", email = "devin.pastoor@gmail.com", role = c("aut"))
     )
-Depends: R (>= 3.3.2)
-License: MIT + file license 
+Depends:
+    R (>= 3.2.4)
+License: MIT + file license
 Encoding: UTF-8
 LazyData: true
-RoxygenNote: 6.0.1
-Suggests: 
+RoxygenNote: 5.0.1
+Suggests:
     testthat
-Imports: 
+Imports:
     dplyr (>= 0.5.0),
     purrr,
     magrittr
