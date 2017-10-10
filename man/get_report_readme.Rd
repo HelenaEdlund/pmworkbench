@@ -4,10 +4,12 @@
 \alias{get_report_readme}
 \title{get the report readme docx file}
 \usage{
-get_report_readme(path = ".")
+get_report_readme(path = ".", proj_type = "poppk_workflow")
 }
 \arguments{
 \item{path}{path to copy to, defaults to current working dir}
+
+\item{proj_type}{project template type, default poppk_workflow}
 }
 \description{
 get the report readme docx file
