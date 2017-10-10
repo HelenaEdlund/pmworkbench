@@ -256,19 +256,22 @@
 % This section remains to be fixed but am waiting for cluster update of latex packages
 \RequirePackage[shortlabels]{enumitem}
 %
-% A-List bullet and A-list subsidary
-% First level: bullet, no indent of bullet
-% Second level: dash, 0.69 indent
-% \setlist[itemize]{leftmargin=*, labelsep=0.69in}
-% \SetLabelAlign{left}{#1\hfill}
-% \setlist*[enumerate]{widest=1.}
-%
-% no change in symbol needed for level 1 and 2. No 
-\renewcommand{\labelitemiii}{\textendash}
-\renewcommand{\labelitemiv}{\textendash}
-%
-% Create a wrapper around enumerate to give the acceptable options
-%
+% A-List bullet (level 1) and A-list subsidary (level 2)
+\setlist{parsep=\parskip} % all bullets separated by 12pt (=parskip)
+% Level 1: bullet, no indent of bullet and 0.69 hanging
+\setlist[1]{leftmargin=*, labelsep=0.69in}
+% Level 2: dash, 0.69 indent + 0.31 hanging.
+% No info provided for level 3 and 4 but appears similar to level 2.
+\setlist[2,3,4]{leftmargin=*, labelsep=0.31in}    % relative previous level
+\renewcommand{\labelitemiii}{\textendash}         % changes label to dash
+\renewcommand{\labelitemiv}{\textendash}          % changes label to dash
+% 
+% A-list (a), A-list (i), A-list Number. 
+% Selection of level 1 indicator controlled by user, number by default.
+\setlist[enumerate,2]{label=\alph*.}
+\setlist[enumerate,3]{label=\roman*.}
+\setlist[enumerate,4]{label=\arabic*.}
+% 
 %----------------------------------------------------------------------------------------
 %	8. Misc packages
 %----------------------------------------------------------------------------------------
