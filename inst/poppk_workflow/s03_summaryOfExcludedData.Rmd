@@ -1,0 +1,140 @@
+---
+title: "Summary of excluded and commented data"
+author: "Author"
+date: "Date"
+output: html_document
+params:
+  printResults: FALSE
+---
+```{r setup, include=FALSE}
+###################################################
+# s03_summaryOfExcludedData.R
+# Description: Summary of data excluded with C="C
+# Dependencies: s01_datasetPrep.R
+###################################################
+library(rprojroot)
+knitr::opts_chunk$set(echo=F)
+knitr::opts_knit$set(root.dir=find_root(has_file("OpenProject.Rproj"))) 
+# knit in this directory -> everything after this chunk is relative top level dir
+
+# Note: R markdown opens a new R session, your global environment is not available.
+```
+
+Load the dataset as prepared by "s01_datasetPrep.R":
+```{r, echo=T, message=F}
+load(file=file.path("./Scripts","s01.RData"))
+# load packages
+source(file=file.path("./Scripts","Setup","setup01_projectPackages.R"))
+```
+
+```{r}
+# The output should be: 
+# 1. a summary table of number of excluded data and reasons (split by >/< LLOQ)
+# 2. a table listing each excluded record
+# Both to be used in the report. 
+```
+
+# Summary of excluded subjects, concentrations and doses
+Number of subjects excluded and total number in final data:
+```{r}
+nTotal <- length(unique(rawdata$OSID))
+nIncl <- length(unique(data$OSID))
+nIncl - nTotal
+nIncl
+```
+
+Total excluded rows: 
+```{r}
+excluded <- rawdata[rawdata$C=="C", ]
+nrow(excluded)
+
+exclDoses <- excluded[excluded$EVID==1,]
+exclConc <- excluded[excluded$EVID==0,]
+```
+Out of which `r nrow(exclDoses)` records are doses and `r nrow(exclConc)` concentrations.
+
+Is anything else than EVID=1 or 0 that is excluded?
+```{r}
+! sum(nrow(exclDoses),nrow(exclConc)) ==  nrow(excluded)
+```
+
+How much of the excluded concentration data is missing or BLQ?
+```{r}
+exclConcNoBQL <- exclConc[exclConc$MDV==1,]
+paste0(nrow(exclConcNoBQL)," (", round(100*(nrow(exclConcNoBQL) / nrow(exclConc))), "%)")
+```
+
+# Review and summary of comments
+## Excluded doses
+```{r}
+unique(exclDoses[,"COMMENT"])
+```
+
+## Excluded concentrations
+```{r}
+unique(exclConc[,"COMMENT"])
+```
+### Reason for exclusion split by BLQ/non-BLQ:
+```{r}
+# In this dataset there are not multiple comments in one row/cell. 
+# If that is the case, you need to be careful not to count it twice/overwrite the reason.
+exclConc$Reason[str_detect(exclConc$COMMENT, "Pre first dose sample") & 
+                  exclConc$BLQ==1] <- "Pre first dose sample BLQ"
+exclConc$Reason[str_detect(exclConc$COMMENT, "Pre first dose sample") & 
+                  exclConc$BLQ==0] <- "Pre first dose sample Non-BLQ"
+
+exclConc$Reason[str_detect(exclConc$COMMENT, "Randomly selected for illustration") & 
+                  exclConc$BLQ==1] <- "Random exclusion BLQ"
+exclConc$Reason[str_detect(exclConc$COMMENT, "Randomly selected for illustration") & 
+                  exclConc$BLQ==0] <- "Random exclusion Non-BLQ"
+
+totalConc <- rawdata %>% 
+  filter(EVID==0)
+
+summary <- 
+  exclConc %>%
+  group_by(Reason) %>% 
+  summarize(n = n(), 
+            percentOfTotal = round(100 * (n / nrow(totalConc)), digits=1))
+summary
+```
+
+
+```{r, include=F}
+if(params$printResults){
+  # Output in reportable table
+  outTab <- summary
+  outTab <- outTab %>% 
+    mutate(Values = paste0(n, " (", percentOfTotal, "%)")) %>% 
+    select(Reason, Values)
+  write.csv(outTab,
+            file = paste(resEDADir, "omittedConcDataSummary.csv", sep="/"),
+            row.names = F)
+}
+```
+
+### How much of the non-BLQ data are sparse samples: 
+```{r}
+# Note, sparse data is those without a OCC assignment in this particular dataset
+# Hence code might need to be changed depending on current data
+sparse <- 
+  exclConc %>%
+  filter(is.na(OCC)) %>% 
+  group_by(Reason) %>% 
+  summarize(n = n(), 
+            percentOfTotal = round(100 * (n / nrow(totalConc)), digits=1))
+sparse
+```
+
+
+# Review of comments not leading to exclusion
+```{r}
+# Use the dataset 'data' for this since all C=="C" is commented out
+unique(data$COMMENT)
+
+data %>%
+  filter(! (COMMENT %in% c(" ", "") | is.na(COMMENT))) %>% 
+  group_by(EVID, COMMENT) %>% 
+  summarize(n = n(), 
+            percentOfTotal = round(100 * (n / nrow(data)), digits=2))
+```

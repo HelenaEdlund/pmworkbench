@@ -1,0 +1,575 @@
+---
+title: "Exploratory data analysis: PK Linearity"
+author: "Author"
+date: ""
+output: 
+  html_document:
+    toc: true
+    toc_depth: 2
+    number_sections: true
+params:
+  printResults: FALSE
+---
+```{r setup, include=F}
+###################################################
+# s06_EDAPkLinearity.Rmd
+# Description: Exploratory data analysis of PK linearity for population PK analysis
+# Dependencies: s01_datasetPrep.R
+###################################################
+library(rprojroot)
+knitr::opts_chunk$set(echo=F)
+knitr::opts_knit$set(root.dir=find_root(has_file("OpenProject.Rproj"))) 
+# for correct printing of dust tables
+options(pixie_interactive=F)
+
+# Note: R markdown opens a new R session, your global environment is not available.
+```
+
+This script uses the data.frame "data", loaded from s01.RData. That is, all rows with C=="C" has been excluded for exploratory data analysis.
+```{r environmentPrep, echo=T, message=F}
+# ------------------------------------------------------------------
+#  Prepare environment
+# ------------------------------------------------------------------
+# load packages
+source(file=file.path("Scripts","Setup","setup01_projectPackages.R")) 
+# load output from s01_DatasetPrep.R
+load(file=file.path("Scripts","s01.RData"))
+
+# White background in plots
+theme_set(theme_bw()) # to be replaced with a azTheme
+update_geom_defaults("point", list(shape = 1))
+```
+
+Are the plots and tables also being written to file?
+```{r}
+params$printResults
+```
+
+# Included data
+```{r, include=F} 
+# The sections below will need to be tweaked for each specific project. 
+# This should only serve as an example
+
+# ------------------------------------------------------------------
+#  Settings for NCA:
+# ------------------------------------------------------------------
+ncaIntervals <-
+  data.frame(start     = 0,
+             end       = c(24),
+             cmax      = T,
+             tmax      = T,
+             aucinf.obs= T,
+             auclast   = T,
+             tlast     = T,
+             tfirst    = T,
+             half.life = T,
+             lambda.z  = T,
+             lambda.z.n.points = T)
+
+# ------------------------------------------------------------------
+#  Extract single dose data
+# ------------------------------------------------------------------
+ncaSingle <-
+  data %>% 
+  filter(!is.na(DOSEFLAG) & DOSEFLAG =="Single dose")
+
+# Use ID.OCC as ID to include multiple single doses from the same patient
+# ID.OCC are missing for doses => fill backwards
+ncaSingle <-
+  ncaSingle %>% 
+  mutate(ID.OCC = na.locf(ID.OCC, fromLast = T), 
+         ID.OCC = as.numeric(as.character(ID.OCC)))
+
+# Dose dataset
+ncaSingleDose <- 
+  ncaSingle %>% 
+  filter(EVID==1) # dosing events
+# unique(ncaSingle$AMT)
+
+## Concentration dataset
+ncaSingleConc <- 
+  ncaSingle %>% 
+  #  filter(EVID !=1) %>% # no dosing events
+  filter(!is.na(BLQ) & BLQ=="Non-BLQ" & !is.na(DV)) # remove all BLQs
+
+## You may have to remove other missing concentrations (MDV==1)
+# ncaSingleConc <- 
+#   ncaSingleConc %>% 
+#   filter(!(!is.na(MDV) & MDV==1 & is.na(BLQ)))
+
+# Add conc=0 at time 0 (or whatever you think is appropriate)
+ncaSingleConc0 <- 
+  data.frame(ID.OCC = unique(ncaSingleConc$ID.OCC),
+             TAFD=0, 
+             TAPD=0, 
+             DV=0)
+
+# join and sort
+ncaSingleConc <- 
+  full_join(ncaSingleConc, ncaSingleConc0)
+ncaSingleConc <- 
+  ncaSingleConc[order(ncaSingleConc$ID.OCC, ncaSingleConc$TAFD),]
+```
+
+## Plots of occasions included for single dose NCA parameters
+Lines connect data from one occasion, points show measured concentrations, the blue horizontal line indicated time of dosing. 
+
+```{r, fig.height=8.5, fig.width=11, warning=F, message=F}
+# ------------------------------------------------------------------
+#  Plot single dose data
+# ------------------------------------------------------------------
+# split by id.occ
+ncaSingleDoseSplit <- ind_data_split(ncaSingleDose, 
+                                   n_per_page = 12, id="ID.OCC")
+ncaSingleConcSplit <- ind_data_split(ncaSingleConc,
+                                   n_per_page = 12, id="ID.OCC")
+
+# IndividualPK profiles for single dose
+p1 <- vector("list", length(ncaSingleConcSplit))
+for(i in 1:length(ncaSingleConcSplit)){
+  p <-
+    # concentrations
+    ggplot(data=ncaSingleConcSplit[[i]], aes(x=TAPD, y=DV)) +
+    geom_line() + geom_point() +
+    # doses
+    geom_vline(data = ncaSingleDoseSplit[[i]], aes(xintercept=TAPD),
+               col="blue", linetype="dashed") +
+    facet_wrap(~ID.OCC, nrow=3, ncol=4,
+               scales="free_y", labeller="label_both") +
+    labs(x=labTAPD, y=labConc)
+  p1[[i]] <- p
+}
+
+invisible(lapply(p1, grob_draw))
+```
+
+```{r, include=F}
+if(params$printResults){
+  pdf(file=file.path(resEDADir, paste0("ncaSingleDoseData_", deliveryDate,".pdf")),
+      height=8.5, width=11)
+  invisible(lapply(p1, grob_draw))
+  dev.off()
+}
+```
+
+```{r, include=F}
+# ------------------------------------------------------------------
+# Merge conc and dose data into NCA object
+# ------------------------------------------------------------------
+ncaSingleDat <-
+  PKNCAdata(ncaSingleConc, ncaSingleDose,
+            formula.conc = DV~TAPD | ID.OCC,
+            formula.dose = AMT~TAPD | ID.OCC,
+            intervals = ncaIntervals)
+
+# ------------------------------------------------------------------
+# Run NCA, extract and re-format results
+# ------------------------------------------------------------------
+ncaResultsSingle <- pk.nca(ncaSingleDat)
+
+# nca results
+ncaResultsSingleExtract <- ncaResultsSingle$result
+ncaResultsSingleExtract <- 
+  spread(ncaResultsSingleExtract[, c("ID.OCC","PPTESTCD","PPORRES")],
+         key = PPTESTCD, value = PPORRES)
+
+# Merge back with covariate data (extract from dose object)
+covExtractSingle <- 
+  ncaResultsSingle$data$dose$data[, c("ID.OCC", contCov, bContCov, catCov, bCatCov,
+                                      "OSID","OSTUDYID","AMT","FREQ", "DOSEFLAG")]
+
+# unique(unique(covExtractSingle$ID.OCC) == unique(ncaResultsSingleExtract$ID.OCC))
+resultsSingle <- full_join(ncaResultsSingleExtract, 
+                           covExtractSingle)
+
+names(resultsSingle)[names(resultsSingle)=="AMT"] <- "dose"
+# unique(resultsSingle$Dose)
+```
+
+```{r, include=F}
+# ------------------------------------------------------------------
+#  Extract multiple dose/steady state data
+# ------------------------------------------------------------------
+ncaMultiple <-
+  data %>% 
+  filter(!is.na(DOSEFLAG) & DOSEFLAG =="Multiple dose")
+
+# Use ID.OCC as ID to include multiple occasions from the same patient
+# ID.OCC are missing for doses => fill backwards
+ncaMultiple <-
+  ncaMultiple %>% 
+  mutate(ID.OCC = na.locf(ID.OCC, fromLast = T), 
+         ID.OCC = as.numeric(as.character(ID.OCC)))
+
+# Dose dataset
+ncaMultipleDose <- 
+  ncaMultiple %>% 
+  filter(EVID==1) # dosing events
+# unique(ncaMultiple$AMT)
+
+## Concentration dataset
+ncaMultipleConc <- 
+  ncaMultiple %>% 
+  #  filter(EVID !=1) %>% # no dosing events
+  filter(!is.na(BLQ) & BLQ=="Non-BLQ" & !is.na(DV)) # remove all BLQs
+
+## You may have to remove other missing concentrations (MDV==1)
+# ncaMultipleConc <- 
+#   ncaMultipleConc %>% 
+#   filter(!(!is.na(MDV) & MDV==1 & is.na(BLQ)))
+
+# Assume no accumulation and add a 0 conc at TAPD=0
+# (or whatever you think is appropriate in your case)
+ncaMultipleConc0 <- 
+  data.frame(ID.OCC = unique(ncaMultipleConc$ID.OCC),
+             TAFD=0, 
+             TAPD=0, 
+             DV=0)
+
+# join and sort
+ncaMultipleConc <- 
+  full_join(ncaMultipleConc, ncaMultipleConc0)
+ncaMultipleConc <- 
+  ncaMultipleConc[order(ncaMultipleConc$ID.OCC, ncaMultipleConc$TAFD),]
+```
+
+## Plots of occasions included for multiple dose/steady state NCA parameters
+Lines connect data from one occasion, points show measured concentrations, the blue horizontal line indicated time of dosing. 
+
+```{r, fig.height=8.5, fig.width=11, warning=F, message=F}
+# ------------------------------------------------------------------
+#  Plot multiple dose data
+# ------------------------------------------------------------------
+# split by id.occ
+ncaMultipleDoseSplit <- ind_data_split(ncaMultipleDose, 
+                                     n_per_page = 12, id="ID.OCC")
+ncaMultipleConcSplit <- ind_data_split(ncaMultipleConc,
+                                     n_per_page = 12, id="ID.OCC")
+
+# IndividualPK profiles for multiple dose/ steady state
+p1 <- vector("list", length(ncaMultipleConcSplit))
+for(i in 1:length(ncaMultipleConcSplit)){
+  p <-
+    # concentrations
+    ggplot(data=ncaMultipleConcSplit[[i]], aes(x=TAPD, y=DV)) +
+    geom_line() + geom_point() +
+    # doses
+    geom_vline(data = ncaMultipleDoseSplit[[i]], aes(xintercept=TAPD),
+               col="blue", linetype="dashed") +
+    facet_wrap(~ID.OCC, nrow=3, ncol=4,
+               scales="free_y", labeller="label_both") +
+    labs(x=labTAPD, y=labConc)
+  p1[[i]] <- p
+}
+
+invisible(lapply(p1, grob_draw))
+```
+
+```{r, include=F}
+if(params$printResults) {
+  pdf(file=file.path(resEDADir, paste0("ncaMultipleDoseData_",deliveryDate,".pdf")),
+      height=8.5, width=11)
+  invisible(lapply(p1, grob_draw))
+  dev.off()
+}
+```
+
+```{r, include=F}
+# ------------------------------------------------------------------
+# Merge conc and dose data into NCA object
+# ------------------------------------------------------------------
+ncaMultipleDat <-
+  PKNCAdata(ncaMultipleConc, ncaMultipleDose,
+            formula.conc = DV~TAPD | ID.OCC,
+            formula.dose = AMT~TAPD | ID.OCC,
+            intervals = ncaIntervals)
+
+# ------------------------------------------------------------------
+# Run NCA, extract and re-format results
+# ------------------------------------------------------------------
+ncaResultsMultiple <- pk.nca(ncaMultipleDat)
+
+# nca results
+ncaResultsMultipleExtract <- ncaResultsMultiple$result
+ncaResultsMultipleExtract <- 
+  spread(ncaResultsMultipleExtract[, c("ID.OCC","PPTESTCD","PPORRES")],
+         key = PPTESTCD, value = PPORRES)
+
+# Merge back with covariate data (extract from dose object)
+covExtractMultiple <- 
+  ncaResultsMultiple$data$dose$data[, c("ID.OCC", contCov, bContCov, catCov, bCatCov,
+                                        "OSID","OSTUDYID","AMT","FREQ", "DOSEFLAG")]
+
+# unique(unique(covExtractMultiple$ID.OCC) == unique(ncaResultsMultipleExtract$ID.OCC))
+resultsMultiple <- full_join(ncaResultsMultipleExtract, 
+                             covExtractMultiple)
+
+names(resultsMultiple)[names(resultsMultiple)=="AMT"] <- "dose"
+# unique(resultsMultiple$Dose)
+
+# ------------------------------------------------------------------
+#  Merge restults from sinlge dose and multiple dose occasions
+# ------------------------------------------------------------------
+results <- rbind(resultsSingle, resultsMultiple)
+
+### Calculate dose normalized values
+results$aucInfDoseNorm <- (results$aucinf.obs / results$dose)
+results$aucLastDoseNorm <- (results$auclast / results$dose)
+results$cmaxDoseNorm   <- (results$cmax / results$dose)
+```
+
+# Assessment of PK linearity, $AUC_{Inf}$ vs dose
+## ANOVA
+Add figure text here
+
+```{r, fig.height=5, fig.width=6.5, warning=F, message=F}
+anova <- dose_proportionality_anova(results, x=dose, y=aucinf.obs, 
+                                    plot.par = T)
+anova[["plot"]] + 
+  labs(y=expression(AUC[inf]~(mg/L%.%h)), 
+       x=expression(Dose~(mg)))
+```
+
+## Linear model
+Add figure text here
+
+```{r, fig.height=5, fig.width=6.5, warning=F, message=F}
+linear <- dose_proportionality_linear(results, x=dose, y=aucinf.obs, 
+                                      plot.par = T)
+linear[["plot"]] + 
+  labs(y=expression(AUC[inf]~(mg/L%.%h)), 
+       x=expression(Dose~(mg)))
+```
+
+## Power-model
+Add figure text here
+
+```{r, fig.height=5, fig.width=6.5, warning=F, message=F}
+power <- dose_proportionality_power(results, x=dose, y=aucinf.obs, 
+                                      plot.par = T)
+power[["plot"]] + 
+  labs(y=expression(AUC[inf]~(mg/L%.%h)), 
+       x=expression(Dose~(mg)))
+```
+
+# Other graphics assessing PK linearity
+Add figure texts here
+
+```{r, fig.height=4.5, fig.width=5.5, warning=F, message=F}
+# Dose should be numeric (it is set as a group within boxplot) using gg_continous_box
+# That way the x-axis is still numeric and displayes the data as continous
+# (important if large range of doses with long, not equally long steps between)
+# str(results$dose)
+
+linearityPlotsPool <- vector("list", 0)
+
+## Cmax ###
+linearityPlotsPool$cmax <-
+  gg_box_continuous(results, x=dose, y=cmax) + 
+  labs(x=expression(Dose~(mg)), y=expression(C[max]~(mg/L)))
+
+linearityPlotsPool$normCmax <-
+  gg_box_continuous(results, x=dose, y=cmaxDoseNorm) + 
+  geom_hline(aes(yintercept=mean(cmaxDoseNorm, na.rm = T)),
+             linetype="dashed", size=0.6) +
+  labs(y=expression(Dose~normalized~C[max]~(mg/L)),
+       x = expression(Dose~(mg)))
+
+## AUC Infinity ###
+linearityPlotsPool$aucInf <-
+  gg_box_continuous(results, x=dose, y=aucinf.obs) + 
+  labs(y=expression(AUC[inf]~(mg/L%.%h)), 
+       x=expression(Dose~(mg)))
+
+linearityPlotsPool$normAucInf <-
+  gg_box_continuous(results, x=dose, y=aucInfDoseNorm) + 
+  geom_hline(aes(yintercept=mean(aucInfDoseNorm, na.rm = T)),
+             linetype="dashed", size=0.6) +
+  labs(y=expression(Dose~normalized~AUC[inf]~(mg/L%.%h)),
+       x = expression(Dose~(mg)))
+
+## AUC 24h ###
+linearityPlotsPool$aucLast <-
+  gg_box_continuous(results, x=dose, y=auclast) + 
+  labs(y=expression(AUC[last]~(mg/L%.%h)), 
+       x = expression(Dose~(mg)))
+
+linearityPlotsPool$NormAUCinf <-
+  gg_box_continuous(results, x=dose, y=aucLastDoseNorm) + 
+  geom_hline(aes(yintercept=mean(aucLastDoseNorm, na.rm = T)),
+             linetype="dashed", size=0.6) +
+  labs(y=expression(Dose~normalized~AUC[last]~(mg/L%.%h)), 
+       x = expression(Dose~(mg)))
+
+# t1/2 ##
+linearityPlotsPool$t_half <-
+  gg_box_continuous(results, x=dose, y=half.life) + 
+  geom_hline(aes(yintercept=mean(half.life, na.rm = T)),
+             linetype="dashed", size=0.6) +
+  labs(y=expression("t"["1/2"]~(h)),
+       x = expression(Dose~(mg)))
+
+invisible(lapply(linearityPlotsPool, grob_draw))
+
+if(params$printResults){
+  pdf(file=file.path(resEDADir,
+                     paste0("PKLinearityAssessment_pooled_", deliveryDate,".pdf")),
+      height=4.5, width=5.5)
+  invisible(lapply(linearityPlotsPool, grob_draw))
+  dev.off()
+}
+```
+
+## Stratified by single/multiple dose
+Add figure text here
+
+```{r, fig.height=5, fig.width=7.5, warning=F, message=F}
+linearityPlotsSplit <- vector("list", 0)
+
+## Cmax ###
+linearityPlotsSplit$CmaxSplit <-
+  gg_box_continuous(results, y=cmax, x=dose,
+                  fill=DOSEFLAG, dodge=30) +
+  labs(y=expression(C[max]~(mg/L)),
+       x=expression(Dose~(mg)))
+
+linearityPlotsSplit$normCmaxSplit <- 
+  gg_box_continuous(results, y=cmaxDoseNorm, x=dose,
+                  fill=DOSEFLAG, dodge=30) +
+  # add grand mean
+  geom_hline(aes(yintercept=mean(cmaxDoseNorm, na.rm = T)),
+             linetype="dashed", size=0.6) +
+  labs(y=expression(Dose~normalized~C[max]~(mg/L)),
+       x=expression(Dose~(mg)))
+
+## AUC Infinity ###
+linearityPlotsSplit$aucInfSplit <-
+  gg_box_continuous(results, y=aucinf.obs, x=dose,
+                  fill=DOSEFLAG, dodge=30) +
+  labs(y=expression(AUC[inf]~(mg/L%.%h)),
+       x=expression(Dose~(mg)))
+
+linearityPlotsSplit$normAucInfSplit <-
+  gg_box_continuous(results, y=aucInfDoseNorm, x=dose,
+                  fill=DOSEFLAG, dodge=30) +
+  # add grand mean
+  geom_hline(aes(yintercept=mean(aucInfDoseNorm, na.rm = T)),
+             linetype="dashed", size=0.6) +
+  labs(y=expression(Dose~normalized~AUC[inf]~(mg/L%.%h)),
+       x = expression(Dose~(mg)))
+
+## AUC Last ###
+linearityPlotsSplit$AUCinfSplit <-
+  gg_box_continuous(results, y=auclast, x=dose,
+                  fill=DOSEFLAG, dodge=30) +
+  labs(y=expression(AUC[last]~(mg/L%.%h)),
+       x=expression(Dose~(mg)))
+
+linearityPlotsSplit$NormAUCinfSplit <-
+  gg_box_continuous(results, y=auclast, x=dose,
+                  fill=DOSEFLAG, dodge=30) +
+  # add grand mean
+  geom_hline(aes(yintercept=mean(aucLastDoseNorm, na.rm = T)),
+             linetype="dashed", size=0.6) +
+  labs(y=expression(Dose~normalized~AUC[last]~(mg/L%.%h)),
+       x = expression(Dose~(mg)))
+
+## t1/2 ##
+linearityPlotsSplit$t_halfSplit <-
+  gg_box_continuous(results, y=half.life, x=dose,
+                  fill=DOSEFLAG, dodge=30) +
+  # add grand mean
+  geom_hline(aes(yintercept=mean(half.life, na.rm = T)),
+             linetype="dashed", size=0.6) +
+  labs(y=expression("t"["1/2"]~(h)),
+       x=expression(Dose~(mg)))
+
+invisible(lapply(linearityPlotsSplit, grob_draw))
+
+if(params$printResults){
+  pdf(file=file.path(resEDADir,
+                     paste0("PKLinearityAssessment_stratified_", deliveryDate,".pdf")),
+      height=8.5, width=11)
+  invisible(lapply(linearityPlotsSplit, grob_draw))
+  dev.off()
+}
+```
+
+# Assessment of covariate effect on NCA parameters
+## Continuous covariates
+Add figure text here
+
+```{r, fig.height=8, fig.width=10, warning=F, message=F}
+doseNormVsCont <-
+  ggduo(results, bContCov, c("aucInfDoseNorm",
+                             "aucLastDoseNorm",
+                             "cmaxDoseNorm"),
+        types = list(continuous = "smooth_loess"),
+        columnLabelsY = c("AUC[Inf]/Dose~(mg/L%.%h/mg)",
+                          "AUC[last]/Dose~(mg/L%.%h/mg)",
+                          "C[max]/Dose~(mg/L/mg)"),
+        labeller="label_parsed")
+
+doseNormVsCont
+
+if(params$printResults){
+  pdf(file=file.path(resEDADir,
+                     paste0("NCA_ContinousCovariates", deliveryDate,".pdf")),
+      height=8, width=10)
+  print(doseNormVsCont)
+  dev.off()
+}
+```
+
+## Categorical covariates
+Add figure text here
+
+```{r, fig.height=8, fig.width=10, warning=F, message=F}
+doseNormVsCat <-
+  ggduo(results, bCatCov, c("aucLastDoseNorm",
+                            "aucLastDoseNorm",
+                            "cmaxDoseNorm"),
+        types = list(comboVertical = ally_box),
+        columnLabelsY = c("AUC[Inf]/Dose~(mg/L%.%h/mg)",
+                          "AUC[Last]/Dose~(mg/L%.%h/mg)",
+                          "C[max]/Dose~(mg/L/mg)"),
+        labeller="label_parsed")
+
+doseNormVsCat
+
+if(params$printResults){
+  pdf(file=file.path(resEDADir,
+                 paste0("NCA_CategoricalCovariates", deliveryDate,".pdf")),
+      height=8, width=10)
+  print(doseNormVsCat)
+  dev.off()
+}
+```
+
+## Stratified by study
+Add figure text here
+
+```{r, fig.height=8, fig.width=5, warning=F, message=F}
+doseNormVsStudy <-
+  ggduo(results,"OSTUDYID", c("aucLastDoseNorm",
+                            "aucLastDoseNorm",
+                            "cmaxDoseNorm"),
+        types = list(comboVertical = ally_box),
+        columnLabelsY = c("AUC[Inf]/Dose~(mg/L%.%h/mg)",
+                          "AUC[Last]/Dose~(mg/L%.%h/mg)",
+                          "C[max]/Dose~(mg/L/mg)"),
+        labeller="label_parsed")
+
+if(params$printResults){
+  pdf(file=file.path(resEDADir,
+                 paste0("NCA_ByStudy", deliveryDate,".pdf")),
+      height=8, width=5)
+  print(doseNormVsStudy)
+  dev.off()
+}
+```
+
+```{r, include=F}
+## Empty environment
+# rm(list = ls())
+```

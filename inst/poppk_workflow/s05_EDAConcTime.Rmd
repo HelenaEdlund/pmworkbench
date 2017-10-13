@@ -1,0 +1,539 @@
+---
+title: "Exploratory data analysis: Concentrations versus time"
+author: "Author"
+date: "Date"
+output: 
+  html_document:
+    toc: true
+    toc_depth: 2
+    number_sections: true
+params:
+  printResults: FALSE
+---
+```{r setup, include=F}
+###################################################
+# s05_EDAConcTime.Rmd
+# Description: Exploratory data analysis of concentrations vs time for population PK analysis
+# Dependencies: s01_datasetPrep.R / s01.RData
+###################################################
+library(rprojroot)
+knitr::opts_chunk$set(echo=F)
+knitr::opts_knit$set(root.dir=find_root(has_file("OpenProject.Rproj"))) 
+# for correct printing of dust tables
+options(pixie_interactive=F)
+# Note: R markdown opens a new R session, your global environment is not available.
+```
+
+This script uses the data.frame "data", loaded from s01.RData. That is, all rows with C=="C" has been excluded for exploratory data analysis.
+```{r environmentPrep, echo=T, message=F}
+# ------------------------------------------------------------------
+#  Prepare environment
+# ------------------------------------------------------------------
+# load packages
+source(file=file.path("Scripts","Setup","setup01_projectPackages.R")) 
+# load output from s01_DatasetPrep.R
+load(file=file.path("Scripts","s01.RData"))
+
+# White background in plots
+theme_set(theme_bw()) # to be replaced with a azTheme
+update_geom_defaults("point", list(shape = 1))
+```
+
+Are the plots and tables also being written to file?
+```{r}
+params$printResults
+```
+
+# Numeric summaries
+The total number of observations in the dataset (with/without BLQ data) and the %BLQ.
+```{r concentrationSummaries}
+# Total number of concentrations in dataset
+nrow(concData)        # All
+nrow(concDataNoBLQ)   # >BLQ
+(nrow(concData) - nrow(concDataNoBLQ))/nrow(concData)*100 # percent BLQ
+```
+
+Number of samples and occasions/subject (with/without BLQ)
+```{r concentrationSummariesBySubject}
+concPerPat <- # total
+  concData %>%
+  group_by(OSID, OSTUDYID) %>% 
+  summarize(nDV=length(DV), 
+            nOcc = ifelse(all(is.na(unique(OCC))), 0, 
+                          max(as.numeric(as.character(OCC)), na.rm=T)),
+            maxTAFD = max(TAFD, na.rm=T))
+summary(concPerPat[,c("nDV","nOcc","maxTAFD")])
+
+concPerPatNoBLQ <-  # >BLQ
+  concDataNoBLQ %>% 
+  group_by(OSID, OSTUDYID) %>% 
+  summarize(nDV=length(DV), 
+            nOcc = ifelse(all(is.na(unique(OCC))), 0, 
+                          max(as.numeric(as.character(OCC)), na.rm=T)),
+            maxTAFD = max(TAFD, na.rm=T))
+summary(concPerPatNoBLQ[,c("nDV","nOcc","maxTAFD")])
+```
+
+Number of individuals and samples per dose group
+```{r samples, warning=F}
+concPerDose <- # total
+  concData %>% 
+  group_by(DOSE) %>% 
+  summarize(nSubjects = length(unique(OSID)),
+            nConc=length(DV)) %>% 
+  mutate(concPercent = 
+           round(100*(nConc/nrow(concData)), digits=1))
+
+concPerDoseNoBLQ <-  # >BLQ
+  concDataNoBLQ %>% 
+  group_by(DOSE) %>% 
+  summarize(nSubjects = length(unique(OSID)),
+            nConc=length(DV)) %>% 
+  mutate(concPercent = 
+           round(100*(nConc/nrow(concDataNoBLQ)), digits=1))
+
+# % BQL per dose group
+concPerDose <- 
+  concPerDose %>% 
+  mutate(blqPercentbyDose = 
+           signif(100-(concPerDoseNoBLQ$nConc/nConc)*100, digits=3))
+
+## merge to reportable table
+concPerDoseTab <- 
+  data.frame(Dose = concPerDose$DOSE, 
+             nSubjects=concPerDose$nSubjects,
+             nConc = paste0(concPerDose$nConc," (",concPerDose$concPercent,")"),
+             percentBlqByDose = concPerDose$blqPercentbyDose)
+
+dust(concPerDoseTab, 
+     caption="Number of individuals and samples per dose group")
+```
+
+```{r, include=F}
+# --------- Save to file
+if(params$printResults){
+  # Note: if subjects are gived multiple doses they are counted several times
+  write.csv(concPerDoseTab[,c("Dose","nSubjects","nConc","percentBlqByDose")], 
+          file = file.path(resEDADir, "concentrationsByDose.csv"), 
+          row.names = F)
+}
+```
+
+# Concentrations versus time, stratified by dose and study
+## Concentrations vs time after first dose, stratified by study and dose group
+Lines connect data from one occasion within a subject. Colour indicate subject. Points indicate measured data. Dashed blue line show the lower limit of quantification. BLQ data is prited as LLOQ/2. 
+
+```{r ConcTime, fig.height=6.5, fig.width=8.5, warning=F, message=F}
+# use max TAFD to set the same x axis on all graphs
+maxX <- max(concData$TAFD, na.rm=T)
+
+# List of plots
+plots <- vector("list", length(concDataStudyDoseSplit))
+for(i in 1:length(concDataStudyDoseSplit)){
+  p <-
+    arrangeGrob(
+      # linear
+      gg_conc_time(concDataStudyDoseSplit[[i]], x=TAFD, 
+                 y=DV, color=OSID, grp=ID.OCC) + 
+        facet_wrap(~StudyDoseSplit) + 
+        coord_cartesian(xlim=c(0, maxX)) +
+        guides(colour="none", shape="none") + 
+        labs(x=labTAFD, y=labConc),
+      # log
+      gg_conc_time(concDataStudyDoseSplit[[i]], x=TAFD, 
+                 y=DV, color=OSID, grp=ID.OCC) + 
+        facet_wrap(~StudyDoseSplit) + 
+        coord_cartesian(xlim=c(0, maxX)) +
+        guides(colour="none", shape="none") + 
+        labs(x=labTAFD, y=labConc) + 
+        scale_y_log10(), 
+      nrow=2)
+  plots[[i]] <- p
+}
+# print each on a separate page
+invisible(lapply(plots, grob_draw))
+
+if(params$printResults){
+  pdf(file=file.path(resEDADir, paste0("concentrationVsTAFDByStudyAndDose_", deliveryDate,".pdf")),
+      height=6.5, width=8.5)
+  invisible(lapply(plots, grob_draw))
+  dev.off()
+}
+``` 
+
+## Concentrations versus time after dose, stratified by study and dose
+*Right*: un-transformed scale. *Left*: log-transformed y-axis. Lines connect data from one occasion within a subject. Colour indicate subject. Points indicate measured data. Dashed blue line show the lower limit of quantification. BLQ data is prited as LLOQ/2. 
+
+```{r ConcTad, fig.height=3, fig.width=8.5, warning=F, message=F}
+# use max TAPD to set the same x axis on all graphs
+maxX <- max(concData$TAPD, na.rm=T)
+
+# List of plots
+plots <- vector("list", length(concDataStudyDoseSplit))
+for(i in 1:length(concDataStudyDoseSplit)){
+  p <-
+    arrangeGrob(
+      # linear
+      gg_conc_time(concDataStudyDoseSplit[[i]], x=TAPD, 
+                 y=DV, color=OSID, grp=ID.OCC) + 
+        facet_wrap(~StudyDoseSplit) + 
+        coord_cartesian(xlim=c(0, maxX)) +
+        guides(colour="none", shape="none") + 
+        labs(x=labTAPD, y=labConc),
+      # log
+      gg_conc_time(concDataStudyDoseSplit[[i]], x=TAPD, 
+                 y=DV, color=OSID, grp=ID.OCC) + 
+        facet_wrap(~StudyDoseSplit) + 
+        coord_cartesian(xlim=c(0, maxX)) +
+        guides(colour="none", shape="none") + 
+        labs(x=labTAPD, y=labConc) + 
+        scale_y_log10(), 
+      nrow=1)
+  plots[[i]] <- p
+}
+# print each on a separate page
+invisible(lapply(plots, grob_draw))
+
+if(params$printResults){
+  pdf(file=file.path(resEDADir,
+                     paste0("concentrationVsTAPDByStudyAndDose_", deliveryDate,".pdf")),
+      height=3, width=8.5)
+  invisible(lapply(plots, grob_draw))
+  dev.off()
+}
+```
+
+## Concentrations versus time after dose, stratified by study and dose (zoom)
+### First 12 hours
+*Right*: un-transformed scale. *Left*: log-transformed y-axis. Lines connect data from one occasion within a subject. Colour indicate subject. Points indicate measured data. Dashed blue line show the lower limit of quantification. BLQ data is prited as LLOQ/2. 
+
+```{r ConcTadZoom, fig.height=3, fig.width=8.5, warning=F, message=F} 
+# If you want to zoom in on a specific time scale e.g. absorption phase or first 12/24 hr 
+maxX <- 12
+# List of plots
+plots <- vector("list", length(concDataStudyDoseSplit))
+for(i in 1:length(concDataStudyDoseSplit)){
+  p <-
+    arrangeGrob(
+      # linear
+      gg_conc_time(concDataStudyDoseSplit[[i]], x=TAPD, 
+                 y=DV, color=OSID, grp=ID.OCC) + 
+        facet_wrap(~StudyDoseSplit) + 
+        coord_cartesian(xlim=c(0, maxX)) +
+        guides(colour="none", shape="none") + 
+        labs(x=labTAPD, y=labConc),
+      # log
+      gg_conc_time(concDataStudyDoseSplit[[i]], x=TAPD, 
+                 y=DV, color=OSID, grp=ID.OCC) + 
+        facet_wrap(~StudyDoseSplit) + 
+        coord_cartesian(xlim=c(0, maxX)) +
+        guides(colour="none", shape="none") + 
+        labs(x=labTAPD, y=labConc) + 
+        scale_y_log10(), 
+      nrow=1)
+  plots[[i]] <- p
+}
+# print each on a separate page
+invisible(lapply(plots, grob_draw))
+
+if(params$printResults){
+  pdf(file=file.path(resEDADir,
+                     paste0("concentrationVsTAPDByStudyAndDose_",maxX,"_", deliveryDate,".pdf")),
+      height=3, width=8.5)
+  invisible(lapply(plots, grob_draw))
+  dev.off()
+}
+```
+
+### Absorption phase: first 4 hours
+*Right*: un-transformed scale. *Left*: log-transformed y-axis. Lines connect data from one occasion within a subject. Colour indicate subject. Points indicate measured data. Dashed blue line show the lower limit of quantification. BLQ data is prited at LLOQ/2. 
+
+```{r ConcTadAbs, fig.height=3, fig.width=8.5, warning=F, message=F} 
+maxX <- 4
+# List of plots
+plots <- vector("list", length(concDataStudyDoseSplit))
+for(i in 1:length(concDataStudyDoseSplit)){
+  p <-
+    arrangeGrob(
+      # linear
+      gg_conc_time(concDataStudyDoseSplit[[i]], x=TAPD, 
+                 y=DV, color=OSID, grp=ID.OCC) + 
+        facet_wrap(~StudyDoseSplit) + 
+        coord_cartesian(xlim=c(0, maxX)) +
+        guides(colour="none", shape="none") + 
+        labs(x=labTAPD, y=labConc),
+      # log
+      gg_conc_time(concDataStudyDoseSplit[[i]], x=TAPD, 
+                 y=DV, color=OSID, grp=ID.OCC) + 
+        facet_wrap(~StudyDoseSplit) + 
+        coord_cartesian(xlim=c(0, maxX)) +
+        guides(colour="none", shape="none") + 
+        labs(x=labTAPD, y=labConc) + 
+        scale_y_log10(), 
+      nrow=1)
+  plots[[i]] <- p
+}
+# print each on a separate page
+invisible(lapply(plots, grob_draw))
+
+if(params$printResults){
+  pdf(file=file.path(resEDADir, paste0("AbsorptionPhase_", maxX,"_", deliveryDate,".pdf")),
+      height=3, width=8.5)
+  invisible(lapply(plots, grob_draw))
+  dev.off()
+}
+```
+
+## Comparison of single and multiple dose occasions
+*Right*: un-transformed scale. *Left*: log-transformed y-axis. Lines connect data from one occasion within a subject. Colour indicate subject. Points indicate measured data. Dashed blue line show the lower limit of quantification. BLQ data is prited at LLOQ/2. 
+
+```{r SingleVsMultiple, fig.height=6, fig.width=8.5, warning=F, message=F} 
+maxX <- 24
+# List of plots
+plots <- vector("list", length(concDataStudyDoseSplit))
+for(i in 1:length(concDataStudyDoseSplit)){
+  # remove sparse occasions (DOSEFLAG = NA)
+  dat <- concDataStudyDoseSplit[[i]] %>% 
+    filter(!is.na(DOSEFLAG))
+  
+  p <-
+    arrangeGrob(
+      # linear
+      gg_conc_time(dat, x=TAPD,
+                 y=DV, color=OSID, grp=ID.OCC) + 
+        facet_wrap(~StudyDoseSplit+DOSEFLAG, nrow = 2) + 
+        coord_cartesian(xlim=c(0, maxX)) +
+        guides(colour="none", shape="none") + 
+        labs(x=labTAPD, y=labConc),
+      # log
+      gg_conc_time(dat, x=TAPD, 
+                 y=DV, color=OSID, grp=ID.OCC) +
+        facet_wrap(~StudyDoseSplit+DOSEFLAG, nrow = 2) + 
+        coord_cartesian(xlim=c(0, maxX)) +
+        guides(colour="none", shape="none") + 
+        labs(x=labTAPD, y=labConc) + 
+        scale_y_log10(), 
+      nrow=1)
+  plots[[i]] <- p
+}
+# print each on a separate page
+invisible(lapply(plots, grob_draw))
+
+if(params$printResults){ 
+  pdf(file=file.path(resEDADir,
+                     paste0("SingleVsMultipleDose_", maxX,"_", deliveryDate,".pdf")),
+      height=6, width=8.5)
+  invisible(lapply(plots, grob_draw))
+  dev.off()
+}
+```
+
+# Individual plots of concentrations vs time
+The section below generates a list of individual plots with different combinations of the following settings:
+
+* Concentration versus time after first dose *or* time after dose
+
+* Log scale and untransformed scale
+
+* Free/fixed scales for axes across individuals
+
+Not all plots are going to be useful, you can just comment out/delete the ones you do not want to keep.
+
+```{r individual, fig.height=8.5, fig.width=11, message=F, warning=F} 
+maxDV <- max(concData$DV, na.rm = T)
+minDV <- min(concData$DV, na.rm = T)
+maxTAFD <- max(concData$TAFD, na.rm = T)
+maxTAPD <- max(concData$TAPD, na.rm = T)
+
+# 1. Conc vs TAFD. Same axes across subjects. 
+individualPlots <- list(
+  gg_title_plot("Concentration vs. time after first dose \n Same axes across subjects"))
+
+p1 <- vector("list", length(concDataIdSplits))
+for(i in 1:(length(concDataIdSplits))){
+  p <-
+    gg_conc_time(concDataIdSplits[[i]], x=TAFD, y=DV, 
+               color=REGIMEN, grp=ID.OCC) + 
+    facet_wrap(~OSID+COHORT, labeller="label_both",
+               nrow=3, ncol=4) +
+    # set scales for axes
+    coord_cartesian(ylim=c(0, maxDV), xlim=c(0, maxTAFD)) +
+    guides(shape="none") + 
+    labs(x=labTAFD, y=labConc)
+  p1[[i]] <- p
+}
+individualPlots <- c(individualPlots, p1)
+
+# 2. Log Conc vs. TAFD. Same axes across subjects
+individualPlots <- 
+  c(individualPlots, list(
+    gg_title_plot("Concentrations vs. time after first dose \n Same axes across subjects \n\n Semi-log")))
+
+p1 <- vector("list", length(concDataIdSplits))
+for(i in 1:(length(concDataIdSplits))){
+  p <-
+    gg_conc_time(concDataIdSplits[[i]], x=TAFD, y=DV, 
+               color=REGIMEN, grp=ID.OCC) + 
+    facet_wrap(~OSID+COHORT, labeller="label_both", 
+               nrow=3, ncol=4) +
+    # set scales for axes
+    coord_cartesian(ylim=c(minDV, maxDV), xlim=c(0, maxTAFD)) +
+    scale_y_log10(breaks=c(1,10,100,1000)) +
+    guides(shape="none") + 
+    labs(x=labTAFD, y=labConc)
+  p1[[i]] <- p
+}
+individualPlots <- c(individualPlots, p1)
+
+# 3. Conc vs TAFD. Free scales on both axes
+individualPlots <-
+  c(individualPlots, list(
+    gg_title_plot("Concentration. vs time after first dose \n Free scales on axes")))
+
+p1 <- vector("list", length(concDataIdSplits))
+for(i in 1:(length(concDataIdSplits))){
+  p <-
+    gg_conc_time(concDataIdSplits[[i]], x=TAFD, y=DV, 
+               color=REGIMEN, grp=ID.OCC) + 
+    facet_wrap(~OSID+COHORT, labeller="label_both", 
+               nrow=3, ncol=4, 
+               scales="free") +
+    guides(shape="none") + 
+    labs(x=labTAFD, y=labConc)
+  p1[[i]] <- p
+}
+individualPlots <- c(individualPlots, p1)
+
+# 4. Log Conc vs TAFD. Free scales on axes
+individualPlots <-
+  c(individualPlots,list(
+    gg_title_plot("Concentration vs. time after first dose \n Free scales on axes \n\n Semi-log")))
+
+p1 <- vector("list", length(concDataIdSplits))
+for(i in 1:(length(concDataIdSplits))){
+  p <-
+    gg_conc_time(concDataIdSplits[[i]], x=TAFD, y=DV, 
+               color=REGIMEN, grp=ID.OCC) + 
+    facet_wrap(~OSID+COHORT, labeller="label_both", 
+               nrow=3, ncol=4, 
+               scales="free") +
+    scale_y_log10(breaks=c(1,10,100,1000)) +
+    guides(shape="none") + 
+    labs(x=labTAFD, y=labConc)
+  p1[[i]] <- p
+}
+individualPlots <- c(individualPlots, p1)
+
+# 5. Conc vs. TAPD. Same y-axis across subjects. 
+individualPlots <- 
+  c(individualPlots, list(
+    gg_title_plot("Concentration vs. time after dose \n Same axes across subjects")))
+
+p1 <- vector("list", length(concDataIdSplits))
+for(i in 1:(length(concDataIdSplits))){
+  p <-
+    gg_conc_time(concDataIdSplits[[i]], x=TAPD, y=DV, 
+               color=REGIMEN, grp=ID.OCC) + 
+    facet_wrap(~OSID+COHORT, labeller="label_both",
+               nrow=3, ncol=4) +
+    # set scales for axes
+    coord_cartesian(ylim=c(0, maxDV), xlim=c(0, maxTAPD)) +
+    guides(shape="none") + 
+    labs(x=labTAPD, y=labConc)
+  p1[[i]] <- p
+}
+individualPlots <- c(individualPlots, p1)
+
+# 6. Log Conc vs. TAPD. Same y-axis across subjects
+individualPlots <-
+  c(individualPlots,list(
+    gg_title_plot("Concentration vs. time after dose \n Same axes across subjects \n\n Semi-log")))
+
+p1 <- vector("list", length(concDataIdSplits))
+for(i in 1:(length(concDataIdSplits))){
+  p <-
+    gg_conc_time(concDataIdSplits[[i]], x=TAPD, y=DV, 
+               color=REGIMEN, grp=ID.OCC) + 
+    facet_wrap(~OSID+COHORT, labeller="label_both",
+               nrow=3, ncol=4) +
+    # set scales for axes
+    coord_cartesian(ylim=c(minDV, maxDV), xlim=c(0, maxTAPD)) +
+    scale_y_log10(breaks=c(1,10,100,1000)) +
+    guides(shape="none") + 
+    labs(x=labTAPD, y=labConc)
+  p1[[i]] <- p
+}
+individualPlots <- c(individualPlots, p1)
+
+# 7. Conc vs TAPD - Free scales
+individualPlots <-
+  c(individualPlots,list(
+    gg_title_plot("Concentration vs. time after dose \n Free scales on axes")))
+
+p1 <- vector("list", length(concDataIdSplits))
+for(i in 1:(length(concDataIdSplits))){
+  p <-
+    gg_conc_time(concDataIdSplits[[i]], x=TAPD, y=DV, 
+               color=REGIMEN, grp=ID.OCC) + 
+    facet_wrap(~OSID+COHORT, labeller="label_both",
+               nrow=3, ncol=4, 
+               scales="free") +
+    guides(shape="none") + 
+    labs(x=labTAPD, y=labConc)
+  p1[[i]] <- p
+}
+individualPlots <- c(individualPlots, p1)
+
+## 8. Log conc vs TAPD - Free scales
+individualPlots <-
+  c(individualPlots,list(
+    gg_title_plot("Concentration vs. time after dose \n Free scales on axes \n Semi-log")))
+
+p1 <- vector("list", length(concDataIdSplits))
+for(i in 1:(length(concDataIdSplits))){
+  p <-
+    gg_conc_time(concDataIdSplits[[i]], x=TAPD, y=DV, 
+               color=REGIMEN, grp=ID.OCC) + 
+    facet_wrap(~OSID+COHORT, labeller="label_both",
+               nrow=3, ncol=4, 
+               scales="free") +
+    scale_y_log10(breaks=c(1,10,100,1000)) +
+    guides(shape="none") + 
+    labs(x=labTAPD, y=labConc)
+  p1[[i]] <- p
+}
+individualPlots <- c(individualPlots, p1)
+
+# 9. Log Conc vs. TAPD. Same y-axis across subjects, TAD <12 h
+maxX <- 12
+
+individualPlots <-
+  c(individualPlots,list(
+    gg_title_plot(paste("Concentration vs. time after dose \n TAD <", maxX ,"\n\n Semi-log"))))
+
+p1 <- vector("list", length(concDataIdSplits))
+for(i in 1:(length(concDataIdSplits))){
+  p <-
+    gg_conc_time(concDataIdSplits[[i]], x=TAPD, y=DV, 
+               color=REGIMEN, grp=ID.OCC) + 
+    facet_wrap(~OSID+COHORT, labeller="label_both",
+               nrow=3, ncol=4) +
+    # set scales for axes
+    coord_cartesian(ylim=c(minDV, maxDV), xlim=c(0, maxX)) +
+    scale_y_log10(breaks=c(1,10,100,1000)) +
+    guides(shape="none") + 
+    labs(x=labTAPD, y=labConc)
+  p1[[i]] <- p
+}
+individualPlots <- c(individualPlots, p1)
+
+## This list takes quite some time to print...
+invisible(lapply(individualPlots, grob_draw))
+
+if(params$printResults){
+  pdf(file=file.path(resEDADir, paste0("individualConcVsTime_", deliveryDate,".pdf")),
+      height=8.5, width=11)
+  invisible(lapply(individualPlots, grob_draw))
+  dev.off()
+}
+```

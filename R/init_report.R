@@ -1,8 +1,8 @@
 #' initialize a project
-#' @param path path
-#' @param proj_type project template type, default poppk
+#' @param path path to copy to, defaults to current working dir
+#' @param proj_type project template type, default poppk_workflow
 #' @export
-init_project <- function(path = ".", proj_type = "poppk") {
+init_project <- function(path = ".", proj_type = "poppk_workflow") {
   if (!dir.exists(path)) {
     dir.create(path, recursive = TRUE)
   }
@@ -25,6 +25,12 @@ init_project <- function(path = ".", proj_type = "poppk") {
 
 #' show report templates
 #' @export
-report_templates <- function() {
-  dir(system.file(package = "xreport")) 
+report_templates <- function(){
+  fullList <- dir(system.file(package = "xreport"), recursive = F) 
+  # don't show package files
+  templates <- 
+    fullList[! fullList %in% 
+               c("DESCRIPTION", "help", "html", "INDEX",
+                 "Meta", "NAMESPACE", "R","ReadMeFiles")]
+  return(templates)
 }

@@ -1,8 +1,12 @@
-\documentclass[letterpaper, 12pt]{azreport}
-% az require 9-12 pt. Hence, allowed latex size functions are:  
+\documentclass[utf8, letterpaper, 12pt]{azreport}
+% az housestyle requires 9-12 pt. Hence, allowed latex size functions are:  
 % \footnotesize=10, \small=10.95, \normalsize=12 and \large=14.4
 
-% Note: file size of a single PDF file is limited to 100 Megabyte (MB). 
+% az housestyle for lists allows 1., (a), and (i) to be used. The default is numeric. 
+% use \begin{enumerate}[(i)] or \begin{enumerate}[(a)] to change.
+% Do not modify 2, 3, 4th level of the lists. 
+
+% Note: file size of a single PDF file is limited to 100 Megabyte (MB).
 
 % -------------------------------------------------
 % knitr opts

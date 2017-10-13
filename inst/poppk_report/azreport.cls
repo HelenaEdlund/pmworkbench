@@ -83,28 +83,29 @@
 %----------------------------------------------------------------------------------------
 %	1. Packages for table of contents (needs to be loaded before hyperref)
 %----------------------------------------------------------------------------------------
-\RequirePackage{titletoc}         % package for partial tocs
-\RequirePackage{tocloft}   				                % for custom toc
-\RequirePackage[numbib,notlot,notlof]{tocbibind}  % for numbered section bibliography in toc
-\RequirePackage[title]{appendix}	                % for better appendix environment
-\RequirePackage{chngcntr}	        % to be able to handle counters in appendices
+\RequirePackage{titletoc}                         % partial tocs
+\RequirePackage{tocloft}   				                % custom toc
+\RequirePackage[numbib,notlot,notlof]{tocbibind}  % numbered section bibliography in toc
+\RequirePackage[title]{appendix}	                % better appendix environment
+\RequirePackage{chngcntr}	                        % handles counters in appendices
 %
 %----------------------------------------------------------------------------------------
 %	2. Tables, Figures, Captions, Handling floats etc (do not change the order of the loading)
 %----------------------------------------------------------------------------------------
 \RequirePackage[section]{placeins}	% managing floats. 
 \RequirePackage{graphicx} 
-\RequirePackage{multirow}	  % multirow staments in tables
-\RequirePackage{longtable}	% multipage spanning tables
-% \RequirePackage{array}      % left-aligned, width determined cells in tables
+\RequirePackage{multirow}	          % multirow staments in tables
+\RequirePackage{longtable}	        % multipage spanning tables
+\RequirePackage{array}              % left-aligned, width determined cells in tables
 \RequirePackage[dvipsnames,table]{xcolor}
-% \RequirePackage{arydshln} % not installed...
+\RequirePackage{arydshln}           
+\RequirePackage{amsmath}			      % nicer equations
 \RequirePackage{amssymb}
 \RequirePackage{hhline}
 %
 \RequirePackage{caption}
-\RequirePackage{pdfpages}	% to include external PDFs (e.g. pre-published analysis plan)
-\RequirePackage{pdflscape}	% to change to landscape
+\RequirePackage{pdfpages}	      % includes external PDFs (e.g. pre-published analysis plan)
+\RequirePackage{pdflscape}	    % change to landscape
 %
 % Create command to add footnote to figures/tables
 \newcommand\fnote[1]{\captionsetup{font=small}\caption*{#1}}
@@ -116,9 +117,12 @@
 % All fonts need to be embedded - occurs automatically but may be problematic for plots. 
 % Use size 9-12pt.
 % Use standard fonts: Times new roman, Arial, Courier New or Symbol
-\RequirePackage{mathptmx} % uses times for text (not sufficient, need to switch to settings below but)
-% \usepackage{fontspec} % not installed on cluster
-% \setmainfont{Times New Roman}
+\usepackage{fontspec}
+\setmainfont[Path = fonts/, 
+    UprightFont = times,
+    BoldFont = timesbd,
+    ItalicFont = timesi,
+    BoldItalicFont =timesbi]{times}
 %
 % Font color should be black (automatic). 
 % Hyperlinks must be designated by blue text or by rectangles using thin lines.
@@ -250,26 +254,28 @@
 %	7. Formating of lists (bullets and numbered)
 %----------------------------------------------------------------------------------------
 % This section remains to be fixed but am waiting for cluster update of latex packages
-% \RequirePackage[shortlabels]{enumitem} % 
+\RequirePackage[shortlabels]{enumitem}
 %
-% A-List bullet and A-list subsidary
-% First level: bullet, no indent of bullet
-% Second level: dash, 0.69 indent
-% \setlist[itemize]{leftmargin=*, labelsep=0.69in}
-% \SetLabelAlign{left}{#1\hfill}
-% \setlist*[enumerate]{widest=1.}
-%
-% no change in symbol needed for level 1 and 2. No 
-\renewcommand{\labelitemiii}{\textendash}
-\renewcommand{\labelitemiv}{\textendash}
-%
-% Create a wrapper around enumerate to give the acceptable options
-%
+% A-List bullet (level 1) and A-list subsidary (level 2)
+\setlist{parsep=\parskip} % all bullets separated by 12pt (=parskip)
+% Level 1: bullet, no indent of bullet and 0.69 hanging
+\setlist[1]{leftmargin=*, labelsep=0.69in}
+% Level 2: dash, 0.69 indent + 0.31 hanging.
+% No info provided for level 3 and 4 but appears similar to level 2.
+\setlist[2,3,4]{leftmargin=*, labelsep=0.31in}    % relative previous level
+\renewcommand{\labelitemiii}{\textendash}         % changes label to dash
+\renewcommand{\labelitemiv}{\textendash}          % changes label to dash
+% 
+% A-list (a), A-list (i), A-list Number. 
+% Selection of level 1 indicator controlled by user, number by default.
+\setlist[enumerate,2]{label=\alph*.}
+\setlist[enumerate,3]{label=\roman*.}
+\setlist[enumerate,4]{label=\arabic*.}
+% 
 %----------------------------------------------------------------------------------------
 %	8. Misc packages
 %----------------------------------------------------------------------------------------
 \RequirePackage[UKenglish]{babel}
-\RequirePackage{amsmath}			    % for nicer equations
 \RequirePackage{underscore}     	% underscore not a special character in text mode
 % 
 %----------------------------------------------------------------------------------------
@@ -383,7 +389,7 @@
                        {12pt \@plus 0.6pt \@minus 0.6pt}% before skip
                        {0.1pt \@plus 0.05pt \@minus 0.05pt}% after skip
                        {\normalfont\large\bfseries}} % style
-}% \AtBeginEnvironment{appendices} does for some reason not work with xelatex
+}% NOTE: "\AtBeginEnvironment{appendices}" does for some reason not work with xelatex
 %
 % Add `Figure' and `Table' before the numbers in list of figures and list of tables
 \renewcommand{\cftfigpresnum}{Figure~}% figure before number

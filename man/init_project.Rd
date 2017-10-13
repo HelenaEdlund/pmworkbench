@@ -4,13 +4,14 @@
 \alias{init_project}
 \title{initialize a project}
 \usage{
-init_project(path = ".", proj_type = "poppk")
+init_project(path = ".", proj_type = "poppk_workflow")
 }
 \arguments{
-\item{path}{path}
+\item{path}{path to copy to, defaults to current working dir}
 
-\item{proj_type}{project template type, default poppk}
+\item{proj_type}{project template type, default poppk_workflow}
 }
 \description{
 initialize a project
 }
+

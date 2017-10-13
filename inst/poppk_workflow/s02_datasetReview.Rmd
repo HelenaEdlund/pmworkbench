@@ -1,0 +1,544 @@
+---
+title: "Dataset review"
+author: "Author"
+date: "Date"
+output: html_document
+---
+```{r setup, include=FALSE}
+###################################################
+# s02_datasetReview.Rmd
+# Description: Review of rawdata, identification of a priori outliers etc
+# Dependencies: s01_datasetPrep.R
+###################################################
+library(rprojroot)
+knitr::opts_chunk$set(echo=F)
+knitr::opts_knit$set(root.dir=find_root(has_file("OpenProject.Rproj"))) 
+# knit in this directory -> everything after this chunk is relative top level dir
+
+# Note: R markdown opens a new R session, your global environment is not available.
+```
+
+Load the dataset as prepared by "s01_datasetPrep.R":
+```{r, echo=T, message=F}
+load(file=file.path("./Scripts","s01.RData"))
+# load packages
+source(file=file.path("./Scripts","Setup","setup01_projectPackages.R"))
+```
+
+This review refers to the full data. That is, data including any rows commented out by "C".
+
+# Structure and dimentions of data
+The first 10 rows of the data: 
+```{r, echo=T}
+head(rawdata, 10)
+```
+
+The dimentions of the data:
+```{r, echo=T}
+dim(rawdata)
+```
+
+Included columns: 
+```{r, echo=T}
+names(rawdata)
+```
+
+Are all columns in the dataset included and defined in "setup03_projectVariables.R"?
+```{r}
+if(all(names(rawdata) %in% allCols)){
+  print("Yes")
+}else{
+  paste("No: ", names(rawdata)[!(names(rawdata) %in% allCols)], "are not included.", collapse="")
+}
+```
+
+Are any columns included that you were not expecting/including in "setup03_projectVariables.R"?
+```{r}
+if(all(allCols %in% names(rawdata))){
+  print("No")
+}else{
+ paste("Yes: ", allCols[!(allCols %in% names(rawdata))], "are not included.", collapse="")
+}
+```
+
+Are there any duplicated rows?
+```{r}
+if(!unique(duplicated(rawdata))){
+  "No" 
+}else{
+  "Yes"
+}
+```
+
+# Check of included studies, cohorts, parts, doses and subjects
+Which studies are included and are they defined in "setup03_projectVariables.R": 
+```{r}
+unique(rawdata$OSTUDYID)
+unique(unique(rawdata$OSTUDYID) %in% ostudies)
+```
+ 
+Same for the numeric versions of the study flag:
+```{r}
+unique(rawdata$STUDYID)
+unique(unique(rawdata$STUDYID) %in% studies)
+```
+
+Are the original study names and the numeric flag column in alignment?
+```{r} 
+rawdata %>% 
+  group_by(OSTUDYID) %>% 
+  summarize(studyid = unique(STUDYID))
+```
+
+Which cohorts are included and are they defined in "setup03_projectVariables.R": 
+```{r}
+unique(rawdata$COHORT)
+unique(unique(rawdata$COHORT) %in% cohorts)
+```
+
+```{r, include=F}
+# Move out and include if parts are in dataset: 
+# Which parts are included and are they defined in "setup03_projectVariables.R": 
+# unique(rawdata$PART)
+# unique(unique(rawdata$PART) %in% parts)
+```
+
+Which dose groups are included and are they defined in "setup03_projectVariables.R": 
+```{r}
+unique(rawdata$DOSE)  
+unique(unique(rawdata$DOSE) %in% doses)
+```
+
+Cross-check of studies, cohorts, parts and dosing regimens
+```{r} 
+# code needs to be modified if several dose/freq levels a cohort
+rawdata %>% 
+  group_by(STUDYID, COHORT) %>% 
+  summarize(ostudyid = unique(OSTUDYID),
+            studyid  = unique(STUDYID), 
+            dose = unique(DOSE),
+            freq = unique(FREQ), 
+            regimen = unique(paste(DOSE, FREQ)))
+```
+
+```{r, include=F} 
+# Uncomment and include if dataset has parts
+# rawdata %>% 
+#   group_by(PART) %>% 
+#   summarize(cohort   = unique(COHORT),
+#             ostudyid = unique(OSTUDYID),
+#             studyid  = unique(STUDYID),
+#             dose     = unique(DOSE), 
+#             freq = unique(FREQ), 
+#             regimen  = unique(paste(DOSE, FREQ)))
+```
+
+Does any subject have any (unexpected) change in dosing freqency?
+```{r} 
+# Don't forget to exclude cohorts with multiple doses/regimens (if any)
+tmp <- rawdata %>% 
+  group_by(OSTUDYID, OSID) %>% 
+  summarize(FREQ = unique(FREQ)) %>% 
+  summarize(duplicates=unique(duplicated(OSID))) 
+tmp$duplicates # if true there are subject(s) who change
+``` 
+
+Does any subject have any (unexpected) change in dose?
+```{r} 
+# Don't forget to exclude cohorts with multiple doses/regimens (if any)
+tmp <- rawdata %>% 
+  group_by(OSTUDYID, OSID) %>% 
+  summarize(DOSE = unique(!is.na(DOSE))) %>% 
+  summarize(duplicates=unique(duplicated(OSID))) 
+tmp$duplicates # if true there are subject(s) who change
+```
+
+The total number of subjects included is:
+```{r}  
+nTotal <- length(unique(rawdata$OSID))
+nTotal
+```
+
+Cross-check of numeric and original subject ID columns:
+```{r, echo=T}
+nTotal == length(unique(rawdata$NMSEQSID))
+
+rawdata %>% 
+  group_by(OSID) %>% 
+  summarize(N = length(unique(NMSEQSID))) %>% 
+  summarize(max = max(N), 
+            duplicates = unique(duplicated(OSID))) # should be 1 and no dupulicates
+```
+
+The total number of subjects in each study:
+```{r}  
+rawdata %>% 
+  group_by(OSTUDYID) %>% 
+  summarize(N=length(unique(OSID)))
+```
+
+Number of PK occasions and maximum follow up time per subject:
+```{r}  
+rawdata %>% 
+  group_by(OSTUDYID, OSID) %>% 
+  summarize(nOcc=ifelse(all(is.na(OCC)), 
+                        0, max(unique(OCC[is.na(AMT)]), na.rm=T)),
+            maxTAFD=max(TAFD, na.rm=T)) %>% 
+  summarize(minOccPerId = min(nOcc), 
+            maxOccPerId = max(nOcc), 
+            minFollowUpPerId = min(maxTAFD), 
+            maxFollowUpPerId = max(maxTAFD))
+```
+
+# Is the data sorted correctly?
+Are the NMSEQSID defined in an increasing order?
+```{r} 
+ids <- unique(rawdata$NMSEQSID)
+idShift <- c(ids[-1], NA)
+idDiff <- na.omit(ids-idShift)
+all(idDiff < 0)
+```
+
+Are the dates and times increasing for each subject?
+```{r}
+# # This code needs to be double checked so that it works. (no date and time included in this example set)
+# rawdata <- 
+#   rawdata %>% 
+#   mutate(DATETIME = paste(DATE, TIME, sep=" ")) %>% 
+#   mutate(DATETIME = as.Date(DATETIME, format = "%Y-%m-%d %H:%M")) # may need to change format
+# 
+# rawdata %>% 
+#   group_by(NMSEQSID) %>% 
+#   mutate(DATETIMEShift = c(DATETIME[-1], NA)) %>% 
+#   mutate(DATETIMEDiff = (DATETIME-DATETIMEShift)) %>% 
+#   summarize(DateTimeIncr = all(DATETIMEDiff[!is.na(DATETIMEDiff)] < 0)) %>% 
+#   summarize(unique(DateTimeIncr))
+```
+
+Is the TAFD increasing for each subject?
+```{r} 
+rawdata %>%
+  group_by(NMSEQSID) %>%
+  mutate(TAFDShift = c(TAFD[-1], NA)) %>%
+  mutate(TAFDDiff = (TAFD-TAFDShift)) %>%
+  summarize(TAFDIncr = all(TAFDDiff[!is.na(TAFDDiff)] < 0)) %>% 
+  summarize(unique(TAFDIncr))
+```
+
+Is the TAPD increasing for each dose event?
+```{r} 
+# Add a flag identifier for each dosing event (can be checked irrespectively of subject id)
+tmp <- rawdata
+tmp$AMTFLAG[!is.na(tmp$AMT)] <- c(1:nrow(tmp[!is.na(tmp$AMT),]))
+# If there are there any rows before the first dose fill those with NA and do locf for the rest
+naIndex <- which(!is.na(tmp$AMT))[1]-1
+if(naIndex==0){
+  tmp$AMTFLAG <- na.locf(tmp$AMTFLAG)
+}else{
+  tmp$AMTFLAG <- c(rep(NA, naIndex), na.locf(tmp$AMTFLAG))
+}
+# summarize similar to above
+tmp %>%
+  group_by(AMTFLAG) %>%
+  mutate(TAPDShift = c(TAPD[-1], NA)) %>%
+  mutate(TAPDDiff = (TAPD-TAPDShift)) %>%
+  summarize(TAPDIncr = all(TAPDDiff[!is.na(TAPDDiff)] < 0)) %>% 
+  summarize(unique(TAPDIncr))
+```
+
+# Column summaries (not including covariates)
+Summary of numeric columns:
+```{r}
+summary(rawdata[, numericCols])
+```
+
+Summary of numeric columns by study:
+```{r}
+for(i in ostudies){
+  print(paste(i,":"))
+  print(summary(rawdata[rawdata$OSTUDYID==i, numericCols]))
+}
+```
+
+Unique values of categorical columns:
+```{r}
+for(i in factorCols){
+  print(rawdata %>% select(i) %>% unique())
+}
+```
+
+Unique values of categorical columns by study:
+```{r}
+for(i in factorCols){
+print(rawdata %>% group_by(OSTUDYID) %>%  
+        select(c("OSTUDYID",i)) %>% unique())
+}
+```
+
+# Cross-check of AMT, EVID, DV, MDV, BQL and CMT:
+Is EVID==0 when AMT is missing?
+```{r}
+rawdata %>% 
+  summarise(evid = unique(EVID[is.na(AMT)])) == 0
+```
+Is EVID==1 when AMT is *not* missing?
+```{r}
+rawdata %>% 
+  summarise(evid = unique(EVID[!is.na(AMT)])) == 1
+```
+
+Is EVID=0 for observations?
+```{r}
+rawdata %>% 
+  summarize(evid = unique(EVID[!is.na(DV)])) == 0  
+```
+
+Is BLQ=0 for non-missing observations?
+```{r}
+rawdata %>% 
+  summarize(blq = unique(BLQ[!is.na(DV)])) == 0   
+```
+
+Are any quantified concentrations reported $<$LLOQ?
+```{r}
+rawdata %>% 
+  summarize(blqDV = unique(DV[!is.na(DV)] < LLOQ)) 
+```
+
+Are all TAPD=0 dosing events (evid=1)?
+```{r}
+rawdata %>% 
+  summarize(evid = unique(EVID[!is.na(TAPD) & TAPD==0])) == 1   
+```
+
+Are the compartments set correctly?
+```{r}
+rawdata %>% 
+  group_by(EVID) %>% 
+  summarize(cmt = unique(CMT)) 
+```
+
+Cross-check columns for rows with missing DV:
+```{r}
+rawdata %>% 
+  subset(is.na(DV) & is.na(AMT)) %>% 
+  summarize(dv = unique(DV), 
+            evid = unique(EVID), 
+            mdv = unique(MDV), 
+            blq = unique(BLQ))
+```
+
+Does DV and LNDV align?
+1. are the same rows missing? 
+```{r}
+unique(is.na(rawdata$DV) == is.na(rawdata$LNDV)) 
+```
+
+2. Is exp(LNDV) the same as DV? If not, what is the max difference? 
+```{r}
+unique(signif(rawdata$DV[!is.na(rawdata$DV)], digits=5) == 
+         signif(exp(rawdata$LNDV[!is.na(rawdata$DV)]), digits=5))
+tmp <- 
+  data.frame(dv = signif(rawdata$DV[!is.na(rawdata$DV)], digits=5),
+             lndv = signif(exp(rawdata$LNDV[!is.na(rawdata$DV)]), digits=5), 
+             dev = (signif(rawdata$DV[!is.na(rawdata$DV)], digits=5) - 
+                      signif(exp(rawdata$LNDV[!is.na(rawdata$DV)]), digits=5)))
+max(abs(tmp$dev))
+```
+
+# Cross-check of C and COMMENTS
+Is there any C="C" which does *not* have an exclusion comment?
+```{r}
+rawdata %>% 
+  filter(C=="C") %>% 
+  summarise(comment = any(COMMENT %in% c("", " ") | is.na(COMMENT)))
+```
+
+# Check of concentration-time data
+Comparison of nomial time and time after dose: 
+
+Note: I did not include a NOMTIME in this example so this is not included here. The code below is from acalabrutinib project and needs to be checked so that it works properly.
+```{r, echo=T}
+# data subset with observations only
+rawdataConc <- rawdata %>% 
+  subset(EVID==0) %>% 
+  subset(!(MDV==1 & is.na(BLQ)))
+
+# # This comparison may have to be split by study if data includes many subjects and different study designs
+# 
+# rawdataConc %>% 
+#   mutate(DIFF = NOMTIME - TAPD)
+# summary(rawdataConc$DIFF)
+```
+
+Are there any missings for NOMTIME or TAPD?
+```{r, echo=T}
+# tmp <- rawdataConc %>% 
+#   subset(is.na(DIFF))
+# tmp
+# unique(tmp$COMMENT)
+# unique(tmp$C)
+```
+
+Check of negative differences (i.e. assessment later than planned)
+```{r, echo=T}
+# rawdataConc %>% 
+#   subset(!is.na(DIFF) & DIFF <= -0.17) %>% #>= 10 min difference
+#   select(c("OSID","DATE","TIME",'TAFD','NOMTIME','TAPD',
+#            "DIFF",'DV','BLQ','FREQ','COMMENT','MDV','OCC','COHORT')) %>% 
+#   group_by(FREQ, NOMTIME, COHORT) %>% 
+#   summarize(min = min(DIFF),
+#             max = max(DIFF),
+#             median=median(DIFF),
+#             n = length(DIFF))
+```
+
+Check of positive differences (i.e. assessment earlier than planned)
+```{r, echo=T}
+# rawdataConc %>% 
+#   subset(!is.na(DIFF) & DIFF >= 0.17) %>% #>= 10 min difference
+#   select(c("OSID","DATE","TIME",'TAFD','NOMTIME','TAPD',
+#            "DIFF",'DV','BLQ','FREQ','COMMENT','MDV','OCC','COHORT')) %>% 
+#   group_by(FREQ, NOMTIME, COHORT) %>% 
+#   summarize(min = min(DIFF),
+#             max = max(DIFF),
+#             median=median(DIFF),
+#             n = length(DIFF))
+```
+
+# Covariate summary and cross-check
+## Baseline data
+```{r}
+baselineData <- rawdata %>% 
+  subset(!duplicated(OSID))
+```
+Summary of continous covariates
+```{r}
+summary(baselineData[, bContCov])
+``` 
+Unique values of categorical covariates
+```{r}
+apply(baselineData[, bCatCov], 2, unique)
+```
+
+Is there only one value for each subject? (should return TRUE for all subjects)
+```{r}
+perId <- function(x){
+  return(length(unique(x))==1) # each individual should only have one value
+}
+summary(
+  rawdata %>% 
+  group_by(OSID) %>% 
+  summarize_at(c(bContCov,bCatCov), 
+               funs(values=perId))
+  )
+```
+
+### Cross-check of categories to ensure that the coding is correct:
+Does males have higher body weight?
+```{r}
+baselineData %>% 
+  subset(BWT!=-99) %>% 
+  group_by(SEXM) %>% 
+  summarise(min = min(BWT),
+            median = median(BWT),
+            max = max(BWT))
+```
+
+Is the RENAL impairment correct compared to CRCL and/or EGFR?
+```{r, echo=T}
+baselineData %>% 
+  group_by(BRENAL) %>% 
+  subset(BEGFR !=-99) %>% 
+  summarize(min = min(BEGFR, na.rm = T),
+            median = median(BEGFR, na.rm = T),
+            max = max(BEGFR, na.rm = T))
+# baselineData %>% 
+#   group_by(BRENAL) %>% 
+#   subset(BCRCL !=-99) %>% 
+#   summarize(min = min(BCRCL, na.rm = T),
+#             median = median(BCRCL, na.rm = T),
+#             max = max(BCRCL, na.rm = T))
+
+# Compare to:
+# Normal: 	  eGFR (mL/min/1.73 m2) ≥90; or CRCL (mL/min) ≥90
+# Mild:		    eGFR (mL/min/1.73 m2) 60-89; or CRCL (mL/min) 60-89
+# Moderate:	  eGFR (mL/min/1.73 m2) 30-59; or CRCL (mL/min) 30-59
+# Severe:		  eGFR (mL/min/1.73 m2) 15-29; or CRCL (mL/min) 15-29
+# End Stage: 	eGFR (mL/min/1.73 m2) <15 /on dialysis; or CRCL (mL/min) <15 /on dialysis
+```
+
+Is the HEPATIC impairment correct compared to BI/AST (if NCI criteria)?
+```{r} 
+# baselineData %>% 
+#   group_by(BHEPATIC) %>% 
+#   subset(BBI !=-99) %>% 
+#   summarize(minBI = min(BBI, na.rm = T),
+#             medianBI = median(BBI, na.rm = T),
+#             maxBI = max(BBI, na.rm = T),
+#             minAST    = min(BAST, na.rm = T),
+#             medianAST = median(BAST, na.rm = T),
+#             maxAST    = max(BAST, na.rm = T))
+
+# NCI criteria:
+# Normal:    Bilirubin ≤ ULN, and AST ≤ ULN
+# Mild:		   Bilirubin ≤ ULN, and AST > ULN or Bilirubin >1.0*ULN to ≤1.5*ULN, and AST of any value
+# Moderate:	 Bilirubin > 1.5*ULN to ≤ 3*ULN, and AST of any value
+# Severe:	   Bilirubin >3.0*ULN, and AST of any value
+# where the upper limit of normal (ULN) for bilirubin and AST
+# are defined within the SDTM of each study.
+```
+
+Spot check of derived variables:
+```{r, echo=T} 
+# Selection of random ids to recalculate for
+ids <- sample(unique(baselineData$OSID), 10)
+temp <- baselineData[baselineData$OSID %in% ids,]
+```
+
+```{r, include=F}
+# uncomment and include if BCRCL in dataset
+# # Re-calculate CRCL and compare
+# BCLCR <- signif(
+#   ifelse(temp$SEXM==1, ((140-temp$AGE)*(temp$BWT) / (temp$BCREA*0.8136)), # if male
+#          0.85*((140-temp$AGE)*(temp$BWT) / (temp$BCREA*0.8136))), # if female
+#   digits=3)
+# BCLCR
+# signif(temp$BCRCL, digits = 3)
+```
+
+Re-calculate BEGFR and compare
+```{r}
+BEGFR <- vector("numeric", length(ids))
+for(i in 1:length(ids)){
+
+  # not black male
+  BEGFR[i] <- 175 * temp$BSCR[i]^(-1.154) * temp$AGE[i]^(-0.203)
+
+  # if female
+  if(temp$SEXM[i]==0){
+    BEGFR[i] <- BEGFR[i] * 0.742
+  }
+  # if black
+  if(temp$RACE[i]==2){
+    BEGFR[i] <- BEGFR[i] * 1.212
+  }
+}
+signif(BEGFR, digits = 3)
+signif(temp$BEGFR, digits = 3)
+```
+
+```{r}
+# uncomment and include if BBSA in dataset
+# Re-calculate BBSA and compare
+# BBSA <- signif(0.007184 * (temp$BWT^0.425) * (temp$BHT^0.725), digits=3)
+# BBSA
+# signif(temp$BBSA, digits = 3)
+```
+
+Re-calculate BBMI and compare
+```{r}
+BBMI <- signif(temp$BWT / ((temp$BHT/100)^2), digits=3)
+BBMI
+signif(temp$BBMI, digits = 3)
+```
