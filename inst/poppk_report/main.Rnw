@@ -1,17 +1,26 @@
 \documentclass[utf8, letterpaper, 12pt]{azreport}
-% az housestyle requires 9-12 pt. Hence, allowed latex size functions are:  
-% \footnotesize=10, \small=10.95, \normalsize=12 and \large=14.4
 
-% az housestyle for lists allows 1., (a), and (i) to be used. The default is numeric. 
-% use \begin{enumerate}[(i)] or \begin{enumerate}[(a)] to change.
-% Do not modify 2, 3, 4th level of the lists. 
+% -------------------------------------------------
+% Use Times New Roman
+% -------------------------------------------------
+\renewcommand{\rmdefault}{ftm}
 
-% Note: file size of a single PDF file is limited to 100 Megabyte (MB).
+% -------------------------------------------------
+% AZ house style notes
+% -------------------------------------------------
+% Require font size: 9-12 pt. => allowed latex size functions are:  
+% \footnotesize (=10), \small (=10.95), \normalsize (=12) and \large (=14.4).
+
+% Allowed list options:  1., (a), and (i). The default is numeric. 
+% Use \begin{enumerate}[(i)] or \begin{enumerate}[(a)] to change to the other options.
+% Do NOT modify level 2, 3, or 4. 
+
+% File size: Mazimum size of a single PDF is 100 MB.
 
 % -------------------------------------------------
 % knitr opts
 % -------------------------------------------------
-<<setup,echo=F,warning=F,message=F>>=
+<<setup, echo=F,warning=F,message=F>>=
 # Load package to find root directory
 library(rprojroot)
 # Dont echo the R code by default
@@ -27,7 +36,7 @@ knitr::opts_knit$set(root.dir=find_root(has_file("OpenProject.Rproj")))
 % When compling/knitting this file a new R session is started. 
 % Your global environment is not available
 <<environmentPrep,echo=F,warning=F,message=F>>=
-# source your .Rprofile to configure the Project Libraries
+# source your .Rprofile to configure the ProjectLibraries
 source(file.path(find_root(has_file("OpenProject.Rproj")), ".Rprofile"))
 source(file.path('Report','Setup','environmentPrep.R'))
 @ 
@@ -43,9 +52,9 @@ source(file.path('Report','Setup','environmentPrep.R'))
 }
 
 % -------------------------------------------------
-% Load report-specific variables
+% Load report-specific variables for title page
 % -------------------------------------------------
-<<projVars, child='./Setup/setup.Rnw'>>=
+<<projVars, child='./Setup/titlePage.Rnw'>>=
 @
 
 % -------------------------------------------------
