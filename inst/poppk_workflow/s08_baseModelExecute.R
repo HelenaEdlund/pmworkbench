@@ -1,7 +1,7 @@
 ###################################################
 # s08_baseModelExecute.R
-# Author: Helena Edlund
-# Created: 2017-09-21
+# Author: 
+# Created: 
 #    
 # Description: Generate and execute NONMEM runs for base model development
 # Dependencies: s07_NMDatasets.Rmd
