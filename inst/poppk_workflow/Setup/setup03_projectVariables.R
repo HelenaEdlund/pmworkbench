@@ -39,7 +39,9 @@ dataSpecFileName        <- "dataSpecFileName.csv" # used by pmxplore::r_data_str
 #  Drug and lloq
 # --------------------
 drugName <- "DrugName"
+DVunit <- "ng/mL"
 LLOQ <- 1
+# molecularWeight <- # g/mol
 
 # --------------------
 #  Columns in data (used in dataset checkout and EDA)
@@ -79,7 +81,7 @@ allCols <- c(studyRelatedCols, numericCols, factorCols, bCatCov, bContCov)
 # Reoccuring labels
 labTAPD <- "Time after dose (h)"
 labTAFD <- "Time after first dose (h)"
-labConc <- "AZDTest concentration (ng/mL)"
+labConc <- paste0(drugName," concentration (", DVunit,")")
 
 # Re-occuring x-axis breaks
 tapdBreaks <- c(0, 2, 4, 6, 8, seq(from=12, to=200, by=6))
