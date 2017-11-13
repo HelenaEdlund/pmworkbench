@@ -6,7 +6,7 @@ init_project <- function(path = ".", proj_type = "poppk_workflow") {
   if (!dir.exists(path)) {
     dir.create(path, recursive = TRUE)
   }
-  project_folder <-  system.file(proj_type, package = "xreport")
+  project_folder <-  system.file(proj_type, package = "pmworkbench")
   if (project_folder == "") {
     stop(glue::glue("no report template detected for type:  {proj_type}"))
   }
@@ -20,13 +20,18 @@ init_project <- function(path = ".", proj_type = "poppk_workflow") {
     }
     file.copy(.from, .to)
     })
-  return(TRUE)
+  return(TRUE) 
+  
+  # Add more informative message here
+  # Should we add some overwrite/check for exisiting files functionality?
+  # function should be renamed to something more appropriate: e.g. download_scripts
+  # (too similar to make_project within tidyproject)
 }
 
 #' show report templates
 #' @export
 report_templates <- function(){
-  fullList <- dir(system.file(package = "xreport"), recursive = F) 
+  fullList <- dir(system.file(package = "pmworkbench"), recursive = F) 
   # don't show package files
   templates <- 
     fullList[! fullList %in% 
