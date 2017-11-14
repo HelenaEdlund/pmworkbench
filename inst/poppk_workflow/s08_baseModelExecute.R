@@ -57,14 +57,14 @@ one_cmt <- blueprint %>%
 
 two_cmt <- blueprint %>% 
   use_template(templates$compartmental) %>%
-  model_type(models$one_cmt_oral) %>% 
+  model_type(models$two_cmt_oral) %>% 
   # Add data
   with_data(nmData) %>%
   from_path(file.path(derivedDataDir, nmDataName)) 
 
 two_cmt_rate <- blueprint %>% 
   use_template(templates$compartmental) %>%
-  model_type(models$one_cmt_oral) %>% 
+  model_type(models$two_cmt_oral) %>% 
   # Add data
   with_data(nmDataComb) %>%
   from_path(file.path(derivedDataDir, nmDataNameComb)) 
