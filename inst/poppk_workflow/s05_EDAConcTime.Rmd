@@ -134,14 +134,14 @@ for(i in 1:length(concDataStudyDoseSplit)){
     arrangeGrob(
       # linear
       gg_conc_time(concDataStudyDoseSplit[[i]], x=TAFD, 
-                 y=DV, color=OSID, grp=ID.OCC) + 
+                 y=DV, color=OSID, occ=OCC) + 
         facet_wrap(~StudyDoseSplit) + 
         coord_cartesian(xlim=c(0, maxX)) +
         guides(colour="none", shape="none") + 
         labs(x=labTAFD, y=labConc),
       # log
       gg_conc_time(concDataStudyDoseSplit[[i]], x=TAFD, 
-                 y=DV, color=OSID, grp=ID.OCC) + 
+                 y=DV, color=OSID, occ=OCC) + 
         facet_wrap(~StudyDoseSplit) + 
         coord_cartesian(xlim=c(0, maxX)) +
         guides(colour="none", shape="none") + 
@@ -175,14 +175,14 @@ for(i in 1:length(concDataStudyDoseSplit)){
     arrangeGrob(
       # linear
       gg_conc_time(concDataStudyDoseSplit[[i]], x=TAPD, 
-                 y=DV, color=OSID, grp=ID.OCC) + 
+                 y=DV, color=OSID, occ=OCC) + 
         facet_wrap(~StudyDoseSplit) + 
         coord_cartesian(xlim=c(0, maxX)) +
         guides(colour="none", shape="none") + 
         labs(x=labTAPD, y=labConc),
       # log
       gg_conc_time(concDataStudyDoseSplit[[i]], x=TAPD, 
-                 y=DV, color=OSID, grp=ID.OCC) + 
+                 y=DV, color=OSID, occ=OCC) + 
         facet_wrap(~StudyDoseSplit) + 
         coord_cartesian(xlim=c(0, maxX)) +
         guides(colour="none", shape="none") + 
@@ -217,14 +217,14 @@ for(i in 1:length(concDataStudyDoseSplit)){
     arrangeGrob(
       # linear
       gg_conc_time(concDataStudyDoseSplit[[i]], x=TAPD, 
-                 y=DV, color=OSID, grp=ID.OCC) + 
+                 y=DV, color=OSID, occ=OCC) + 
         facet_wrap(~StudyDoseSplit) + 
         coord_cartesian(xlim=c(0, maxX)) +
         guides(colour="none", shape="none") + 
         labs(x=labTAPD, y=labConc),
       # log
       gg_conc_time(concDataStudyDoseSplit[[i]], x=TAPD, 
-                 y=DV, color=OSID, grp=ID.OCC) + 
+                 y=DV, color=OSID, occ=OCC) + 
         facet_wrap(~StudyDoseSplit) + 
         coord_cartesian(xlim=c(0, maxX)) +
         guides(colour="none", shape="none") + 
@@ -257,14 +257,14 @@ for(i in 1:length(concDataStudyDoseSplit)){
     arrangeGrob(
       # linear
       gg_conc_time(concDataStudyDoseSplit[[i]], x=TAPD, 
-                 y=DV, color=OSID, grp=ID.OCC) + 
+                 y=DV, color=OSID, occ=OCC) + 
         facet_wrap(~StudyDoseSplit) + 
         coord_cartesian(xlim=c(0, maxX)) +
         guides(colour="none", shape="none") + 
         labs(x=labTAPD, y=labConc),
       # log
       gg_conc_time(concDataStudyDoseSplit[[i]], x=TAPD, 
-                 y=DV, color=OSID, grp=ID.OCC) + 
+                 y=DV, color=OSID, occ=OCC) + 
         facet_wrap(~StudyDoseSplit) + 
         coord_cartesian(xlim=c(0, maxX)) +
         guides(colour="none", shape="none") + 
@@ -300,14 +300,14 @@ for(i in 1:length(concDataStudyDoseSplit)){
     arrangeGrob(
       # linear
       gg_conc_time(dat, x=TAPD,
-                 y=DV, color=OSID, grp=ID.OCC) + 
+                 y=DV, color=OSID, occ=OCC) + 
         facet_wrap(~StudyDoseSplit+DOSEFLAG, nrow = 2) + 
         coord_cartesian(xlim=c(0, maxX)) +
         guides(colour="none", shape="none") + 
         labs(x=labTAPD, y=labConc),
       # log
       gg_conc_time(dat, x=TAPD, 
-                 y=DV, color=OSID, grp=ID.OCC) +
+                 y=DV, color=OSID, occ=OCC) +
         facet_wrap(~StudyDoseSplit+DOSEFLAG, nrow = 2) + 
         coord_cartesian(xlim=c(0, maxX)) +
         guides(colour="none", shape="none") + 
@@ -353,7 +353,7 @@ p1 <- vector("list", length(concDataIdSplits))
 for(i in 1:(length(concDataIdSplits))){
   p <-
     gg_conc_time(concDataIdSplits[[i]], x=TAFD, y=DV, 
-               color=REGIMEN, grp=ID.OCC) + 
+               color=REGIMEN, occ=OCC) + 
     facet_wrap(~OSID+COHORT, labeller="label_both",
                nrow=3, ncol=4) +
     # set scales for axes
@@ -373,7 +373,7 @@ p1 <- vector("list", length(concDataIdSplits))
 for(i in 1:(length(concDataIdSplits))){
   p <-
     gg_conc_time(concDataIdSplits[[i]], x=TAFD, y=DV, 
-               color=REGIMEN, grp=ID.OCC) + 
+               color=REGIMEN, occ=OCC) + 
     facet_wrap(~OSID+COHORT, labeller="label_both", 
                nrow=3, ncol=4) +
     # set scales for axes
@@ -394,7 +394,7 @@ p1 <- vector("list", length(concDataIdSplits))
 for(i in 1:(length(concDataIdSplits))){
   p <-
     gg_conc_time(concDataIdSplits[[i]], x=TAFD, y=DV, 
-               color=REGIMEN, grp=ID.OCC) + 
+               color=REGIMEN, occ=OCC) + 
     facet_wrap(~OSID+COHORT, labeller="label_both", 
                nrow=3, ncol=4, 
                scales="free") +
@@ -413,7 +413,7 @@ p1 <- vector("list", length(concDataIdSplits))
 for(i in 1:(length(concDataIdSplits))){
   p <-
     gg_conc_time(concDataIdSplits[[i]], x=TAFD, y=DV, 
-               color=REGIMEN, grp=ID.OCC) + 
+               color=REGIMEN, occ=OCC) + 
     facet_wrap(~OSID+COHORT, labeller="label_both", 
                nrow=3, ncol=4, 
                scales="free") +
@@ -433,7 +433,7 @@ p1 <- vector("list", length(concDataIdSplits))
 for(i in 1:(length(concDataIdSplits))){
   p <-
     gg_conc_time(concDataIdSplits[[i]], x=TAPD, y=DV, 
-               color=REGIMEN, grp=ID.OCC) + 
+               color=REGIMEN, occ=OCC) + 
     facet_wrap(~OSID+COHORT, labeller="label_both",
                nrow=3, ncol=4) +
     # set scales for axes
@@ -453,7 +453,7 @@ p1 <- vector("list", length(concDataIdSplits))
 for(i in 1:(length(concDataIdSplits))){
   p <-
     gg_conc_time(concDataIdSplits[[i]], x=TAPD, y=DV, 
-               color=REGIMEN, grp=ID.OCC) + 
+               color=REGIMEN, occ=OCC) + 
     facet_wrap(~OSID+COHORT, labeller="label_both",
                nrow=3, ncol=4) +
     # set scales for axes
@@ -474,7 +474,7 @@ p1 <- vector("list", length(concDataIdSplits))
 for(i in 1:(length(concDataIdSplits))){
   p <-
     gg_conc_time(concDataIdSplits[[i]], x=TAPD, y=DV, 
-               color=REGIMEN, grp=ID.OCC) + 
+               color=REGIMEN, occ=OCC) + 
     facet_wrap(~OSID+COHORT, labeller="label_both",
                nrow=3, ncol=4, 
                scales="free") +
@@ -493,7 +493,7 @@ p1 <- vector("list", length(concDataIdSplits))
 for(i in 1:(length(concDataIdSplits))){
   p <-
     gg_conc_time(concDataIdSplits[[i]], x=TAPD, y=DV, 
-               color=REGIMEN, grp=ID.OCC) + 
+               color=REGIMEN, occ=OCC) + 
     facet_wrap(~OSID+COHORT, labeller="label_both",
                nrow=3, ncol=4, 
                scales="free") +
@@ -515,7 +515,7 @@ p1 <- vector("list", length(concDataIdSplits))
 for(i in 1:(length(concDataIdSplits))){
   p <-
     gg_conc_time(concDataIdSplits[[i]], x=TAPD, y=DV, 
-               color=REGIMEN, grp=ID.OCC) + 
+               color=REGIMEN, occ=OCC) + 
     facet_wrap(~OSID+COHORT, labeller="label_both",
                nrow=3, ncol=4) +
     # set scales for axes

@@ -1,7 +1,7 @@
 ###################################################
 # s08_baseModelExecute.R
-# Author: Helena Edlund
-# Created: 2017-09-21
+# Author: 
+# Created: 
 #    
 # Description: Generate and execute NONMEM runs for base model development
 # Dependencies: s07_NMDatasets.Rmd
@@ -57,14 +57,14 @@ one_cmt <- blueprint %>%
 
 two_cmt <- blueprint %>% 
   use_template(templates$compartmental) %>%
-  model_type(models$one_cmt_oral) %>% 
+  model_type(models$two_cmt_oral) %>% 
   # Add data
   with_data(nmData) %>%
   from_path(file.path(derivedDataDir, nmDataName)) 
 
 two_cmt_rate <- blueprint %>% 
   use_template(templates$compartmental) %>%
-  model_type(models$one_cmt_oral) %>% 
+  model_type(models$two_cmt_oral) %>% 
   # Add data
   with_data(nmDataComb) %>%
   from_path(file.path(derivedDataDir, nmDataNameComb)) 
@@ -102,7 +102,7 @@ if(modelNo=="001"){
                      comment=paste0("CL ;", unitCL, ";")),
       V = parameter(400, lower_bound = 0, 
                     comment=paste0("V ;",unitV, ";"))) %>%
-    heirarchies(CL = 0.04) %>% 
+    hierarchies(CL = 0.04) %>% 
     residual_error(PROP = 0.1)
   
   # tweak for adding tables and comments (temporary)
@@ -148,7 +148,7 @@ if(modelNo=="002"){
   seed <- format(Sys.time(), "%y%m%d%H%M")
   
   run002 <- run001 %>% 
-    heirarchies(CL = 0.1, V = 0.1) 
+    hierarchies(CL = 0.1, V = 0.1) 
   
   # tweak for adding tables and comments (temporary)
   parms <- names(run002$get_params())
@@ -197,7 +197,7 @@ if(modelNo=="003"){
                      comment=paste0("CL ;", unitCL, ";")),
       V = parameter(400, lower_bound = 0, 
                     comment=paste0("V ;",unitV, ";"))) %>%
-    heirarchies(b1 = block(0.1, 0.05, 0.1, 
+    hierarchies(b1 = block(0.1, 0.05, 0.1, 
                            param_names = c("CL", "V"))) %>% 
     residual_error(PROP = 0.1)
   
@@ -250,7 +250,7 @@ if(modelNo=="003m3"){
   #                      comment=paste0("CL ;", unitCL, ";")),
   #       V = parameter(400, lower_bound = 0, 
   #                     comment=paste0("V ;",unitV, ";"))) %>%
-  #     heirarchies(b1 = block(0.1, 0.05, 0.1, 
+  #     hierarchies(b1 = block(0.1, 0.05, 0.1, 
   #                            param_names = c("CL", "V"))) # %>% 
   # #     residual_error(PROP = 0.1)
   #   
@@ -307,7 +307,7 @@ if(modelNo=="004"){
                     comment=paste0("Q ;",unitCL, ";")),
       V3 = parameter(250, lower_bound = 0, 
                      comment=paste0("V3 ;",unitV, ";"))) %>%
-    heirarchies(CL = 0.04) %>% 
+    hierarchies(CL = 0.04) %>% 
     residual_error(PROP = 0.1)
   
   # tweak for adding tables and comments (temporary)
@@ -350,7 +350,7 @@ if(modelNo=="005"){
   seed <- format(Sys.time(), "%y%m%d%H%M")
   
   run005 <- run004 %>% 
-    heirarchies(CL = 0.1, V = 0.1) 
+    hierarchies(CL = 0.1, V = 0.1) 
   
   # tweak for adding tables and comments (temporary)
   parms <- names(run005$get_params())
@@ -405,7 +405,7 @@ if(modelNo=="006"){
                     comment=paste0("Q ;",unitCL, ";")),
       V3 = parameter(250, lower_bound = 0, 
                      comment=paste0("V3 ;",unitV, ";"))) %>%
-    heirarchies(b1 = block(0.1, 0.05, 0.1, 
+    hierarchies(b1 = block(0.1, 0.05, 0.1, 
                            param_names = c("CL", "V2"))) %>% 
     residual_error(PROP = 0.1)
   
@@ -524,7 +524,7 @@ if(modelNo=="008"){
                     comment=paste0("Q ;",unitCL, ";")),
       V3 = parameter(250, lower_bound = 0, 
                      comment=paste0("V3 ;",unitV, ";"))) %>%
-    heirarchies(b1 = block(0.1, 0.05, 0.1, 
+    hierarchies(b1 = block(0.1, 0.05, 0.1, 
                            param_names = c("CL", "V2"))) %>% 
     residual_error(PROP = 0.1)
   
@@ -616,7 +616,7 @@ if(modelNo=="010"){
   seed <- format(Sys.time(), "%y%m%d%H%M")
   
   run010 <- run008 %>% 
-    heirarchies(D1=0.1)
+    hierarchies(D1=0.1)
   
   # tweak for adding tables and comments (temporary)
   parms <- names(run010$get_params())

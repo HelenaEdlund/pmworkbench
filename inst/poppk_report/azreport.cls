@@ -114,15 +114,17 @@
 %----------------------------------------------------------------------------------------
 %	3. Fonts
 %----------------------------------------------------------------------------------------
-% All fonts need to be embedded - occurs automatically but may be problematic for plots. 
-% Use size 9-12pt.
+% Useful background info: https://www.tug.org/pracjourn/2006-1/schmidt/schmidt.pdf
+%
+% All fonts need to be embedded: occurs automatically but may be problematic for plots. 
+%
+% Use size 9-12pt: controlled in main.tex and sections 
+%
+% 8-bit encoding of fonts to allow better copy-paste and hyphenation 
+\usepackage[T1]{fontenc}
+%
 % Use standard fonts: Times new roman, Arial, Courier New or Symbol
-\usepackage{fontspec}
-\setmainfont[Path = fonts/, 
-    UprightFont = times,
-    BoldFont = timesbd,
-    ItalicFont = timesi,
-    BoldItalicFont =timesbi]{times}
+\renewcommand{\rmdefault}{ftm}  % ftm is TNR, globally installed on the az HPC system
 %
 % Font color should be black (automatic). 
 % Hyperlinks must be designated by blue text or by rectangles using thin lines.
