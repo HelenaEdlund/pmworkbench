@@ -19,6 +19,10 @@ failure <- function(...) {
   bullet(paste0(...), bullet = crayon::red(clisymbols::symbol$cross))
 }
 
+stop_failure <- function(...) {
+  stop(paste0(crayon::red(clisymbols::symbol$cross), " ", ..., "\n"))
+}
+
 code_block <- function(..., copy = interactive()) {
   block <- paste0("  ", c(...), collapse = "\n")
   if (copy && clipr::clipr_available()) {
