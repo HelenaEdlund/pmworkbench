@@ -55,11 +55,32 @@ list_files <- function(
   normalize = FALSE,
   must_work = TRUE
 ) {
-  dirs__ <- dir(path, all.files = all.files, no.. = no.., recursive = recursive, ...)
+  files__ <- dir(path, all.files = all.files, no.. = no.., recursive = recursive, ...) %>%
+    discard(is_dir)
   if (normalize) {
-    dirs__ <- normalizePath(dirs__, mustWork = must_work)
+    files__ <- normalizePath(files__, mustWork = must_work)
   }
-  return(dirs__)
+  return(files__)
+}
+
+
+stop_if_null <- function(check, message) {
+  if (is.null(check)) {
+    stop(message)
+  }
+  invisible()
+}
+
+
+#' list files, including hidden ones, in a directory
+#' @rdname list_files
+#' @param ... parameters to pass to list_files
+#' @export
+list_files_and_dirs <- function(
+  ...
+) {
+  files__ <- list_files(...)
+  return(list(files = files__, dirs = unique(dirname(files__))))
 }
 
 
