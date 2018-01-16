@@ -20,4 +20,5 @@ Imports:
     magrittr,
     clipr,
     crayon,
-    clisymbols
+    clisymbols,
+    debugme
