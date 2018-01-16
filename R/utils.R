@@ -75,6 +75,7 @@ stop_if_null <- function(check, message) {
 #' list files, including hidden ones, in a directory
 #' @rdname list_files
 #' @param ... parameters to pass to list_files
+#' @return a list containing files and dirs elements
 #' @export
 list_files_and_dirs <- function(
   ...
