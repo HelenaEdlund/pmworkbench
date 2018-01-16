@@ -14,7 +14,10 @@ LazyData: true
 RoxygenNote: 5.0.1
 Suggests:
     testthat
-Imports:
+Imports: 
     dplyr (>= 0.5.0),
     purrr,
-    magrittr
+    magrittr,
+    clipr,
+    crayon,
+    clisymbols
