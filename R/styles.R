@@ -10,8 +10,13 @@ todo_bullet <- function() crayon::red(clisymbols::symbol$bullet)
 todo <- function(...) {
   bullet(paste0(...), bullet = todo_bullet())
 }
+
 done <- function(...) {
   bullet(paste0(...), bullet = crayon::green(clisymbols::symbol$tick))
+}
+
+failure <- function(...) {
+  bullet(paste0(...), bullet = crayon::red(clisymbols::symbol$cross))
 }
 
 code_block <- function(..., copy = interactive()) {
