@@ -1,15 +1,18 @@
 #' initialize a project
 #' @param path path to copy to, defaults to current working dir
-#' @param proj_type project template type, default poppk_workflow
+#' @param template project template type, default: poppk_workflow
 #' @export
-init_project <- function(path = ".", proj_type = "poppk_workflow") {
-  if (!dir.exists(path)) {
-    dir.create(path, recursive = TRUE)
-  }
-  project_folder <-  system.file(proj_type, package = "pmworkbench")
+init_project <- function(path = ".", template = "poppk_workflow") {
+  
+  project_folder <-  package_filepath(proj_type)
   if (project_folder == "") {
     stop(glue::glue("no report template detected for type:  {proj_type}"))
   }
+  
+  if (!dir.exists(path)) {
+    dir.create(path, recursive = TRUE)
+  }
+  
   project_files <- dir(project_folder, recursive = TRUE)
   to_copy <- file.path(project_folder, project_files)
   to_path <- file.path(path, project_files)
@@ -31,7 +34,7 @@ init_project <- function(path = ".", proj_type = "poppk_workflow") {
 #' show report templates
 #' @export
 report_templates <- function(){
-  fullList <- dir(system.file(package = "pmworkbench"), recursive = F) 
+  fullList <- dir(package_filepath(), recursive = F) 
   # don't show package files
   templates <- 
     fullList[! fullList %in% 
