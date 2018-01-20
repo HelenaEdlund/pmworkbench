@@ -20,7 +20,7 @@ failure <- function(...) {
 }
 
 stop_failure <- function(...) {
-  stop(paste0(crayon::red(clisymbols::symbol$cross), " ", ..., "\n"))
+  stop(paste0(crayon::red(clisymbols::symbol$cross), " ", ..., "\n"), call. = FALSE)
 }
 
 code_block <- function(..., copy = interactive()) {
