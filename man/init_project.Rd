@@ -14,4 +14,3 @@ init_project(path = ".", proj_type = "poppk_workflow")
 \description{
 initialize a project
 }
-
