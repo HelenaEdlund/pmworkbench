@@ -8,29 +8,29 @@
 ###################################################
 
 # ----------- Path to and installation of libraries -------------------
-# All packages installed within the project for version control (set up via tidyproject)
-# Only run first time
 if(F){
-  devtools::install_github("tsahota/tidyproject")
-  devtools::install_github("tsahota/NMproject")
-#   devtools::install_github("AstraZeneca/pmworkbench?")
-#   devtools::install_github("AstraZeneca/pmxplore")
+  # All packages installed within the project for version control (set up via tidyproject)
+  # Only run first time
+  devtools::install_github("AstraZeneca/tidyproject")
+  devtools::install_github("AstraZeneca/NMproject")
+  devtools::install_github("AstraZeneca/pmworkbench")
+  devtools::install_github("AstraZeneca/pmxplore")
   devtools::install_github("AstraZeneca/blueprint")
-#   devtools::install_github("UUPharmacometrics/xpose")
-  devtools::install_github("ronkeizer/vpc")
   
-  install.packages("PKNCA", "pixiedust")
+  install.packages("PKNCA", "pixiedust", 'xpose', dependencies = TRUE)
 }
 
-# load
-library(tidyproject)
-library(NMproject)
-# library(pmxplore)
+# Workflow related packages
+library(NMproject) # also loads tidyproject
+library(xpmworkbench)
+library(xpmxplore)
 library(blueprint)
 library(knitr)
 library(rprojroot)
-library(pixiedust)
+library(pixiedust) # handles tables for latex
+library(xpose) # handles tables for latex
 
+# Tidyverse and plotting
 library(grid)
 library(gridExtra)
 library(tibble)
@@ -41,6 +41,7 @@ library(readr)
 library(purrr)
 library(stringr)
 library(GGally)
+
+# Misc
 library(zoo)
-library(xpose4)
 library(PKNCA)

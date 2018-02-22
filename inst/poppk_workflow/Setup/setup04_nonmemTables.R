@@ -1,26 +1,27 @@
 # ------------------------------------------------------------------
-#  Temporary wrokaround for blueprint
+#  Temporary workaround for blueprint
 # ------------------------------------------------------------------
-
 
 
 # ------------------------------------------------------------------
 #  Specify items to request in nonmem output tables
 # ------------------------------------------------------------------
-allTab     <- "ID TIME TAPD"
-catCovTab  <- "SEXM RACE ETHNIC BRENAL DOSE FREQ OCC COHORT STUDYID"
-contCovTab <- "AGE BWT BBMI BHT BEGFR BSCR"
-evalTab    <- "DV LNDV AMT PRED RES WRES IPRED IRESI IWRESI CWRES NPDE"
-otherTab   <- "EVID MDV CMT BLQ"
+nm_tab <- list(
+  all      = "ID TIME TAPD",
+  cat_cov  = "SEXM RACE ETHNIC BRENAL DOSE FREQ OCC COHORT STUDYID",
+  cont_cov = "AGE BWT BBMI BHT BEGFR BSCR",
+  eval     = "DV LNDV AMT PRED RES WRES IPRED IRESI IWRESI CWRES NPDE",
+  other    = "EVID MDV CMT BLQ")
 
 ## clt file and bash file update functions 
-cltFileUpdate <- 
-  function(cltfile, estMethod="CONDITIONAL INTER", cov=T, run=modelNo){ 
-    
-    # allTab, evalTab, parameters, contCovTab, catCovTab and seed defined globally
+# (parms and seed defined globally for each run)
+cltfile_update <- 
+  function(cltfile, run=model_no, p=parms, s=seed, 
+           nm_vars=nm_tab, 
+           est_method="CONDITIONAL INTER", cov=T){
     
     # Add estimation
-    est <- paste0("$EST METHOD=",estMethod ,
+    est <- paste0("$EST METHOD=", est_method ,
                   " NOABORT MAXEVAL=9999 MSFO=MSF", run,"\n\n\n")
     
     cltfile <- paste(cltfile, est)
@@ -30,12 +31,13 @@ cltFileUpdate <-
     }
     
     # Add table
-    par <- paste(parms, collapse = " ")
-    tab <- paste("$TABLE", allTab, evalTab,
-                 otherTab, par, contCovTab, catCovTab,
+    par <- paste(p, collapse = " ")
+    tab <- paste("$TABLE", 
+                 paste(unlist(nm_vars), collapse = " "), 
+                 par,
                  "NOAPPEND ONEHEADER NOPRINT",
-                 paste0("FILE=tab", modelNo), 
-                 paste0("ESAMPLE=1000 SEED=", seed), # seed needed for npde
+                 paste0("FILE=tab", model_no), 
+                 paste0("ESAMPLE=1000 SEED=", s), # seed needed for npde
                  collapse= " ")
     cltfile <- paste(cltfile, tab)
     
@@ -45,13 +47,13 @@ cltFileUpdate <-
 # ------------------------------------------------------------------
 #  Default psn execute and update function
 # ------------------------------------------------------------------
-psnExecuteTemp <- 
-  "execute FileName.mod -directory=DirName -threads=1"
+psn_execute_template <- 
+  "execute filename.mod -directory=dirname -threads=1"
 
-executeUpdate <- function(template, file=fileName, dir=dirName){
-  line <- str_replace(template, "FileName.mod", file)
-  line <- str_replace(line, "DirName", dir)
-  # fileName and dirName set globally for each run
+execute_update <- function(template, file=filename, dir=dir_name){
+  line <- str_replace(template, "filename.mod", file)
+  line <- str_replace(line, "dirname", dir)
+  # filename and dirname set globally for each run
   return(line)
 }
 
