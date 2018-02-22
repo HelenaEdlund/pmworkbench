@@ -1,10 +1,10 @@
 ###################################################
-# s08_baseModelExecute.R
+# s08_base_model_execute.R
 # Author: 
 # Created: 
 #    
 # Description: Generate and execute NONMEM runs for base model development
-# Dependencies: s07_NMDatasets.Rmd
+# Dependencies: s07_nm_datasets.Rmd / s07.RData
 ###################################################
 
 # ------------------------------------------------------------------
@@ -23,7 +23,7 @@ models <- available_models("nonmem")
 # ------------------------------------------------------------------
 #  Define path to data relative the base model dir
 # ------------------------------------------------------------------
-derivedDataDirRelBase <- paste0("../.", derivedDataDir)
+derived_data_dir_rel_base <- paste0("../.", derived_data_dir)
 
 # ------------------------------------------------------------------
 #  Settings for plots
@@ -36,11 +36,11 @@ update_geom_defaults("point", list(shape = 1))
 # ------------------------------------------------------------------
 # Drug concentrations are in in mg/L, doses in mg and time(=TAFD) in hours. 
 # Hence, Ka in h-1, CL & Q in L/h, V1 & V2 in L, scaling=V
-unitDV <- "mg/L"
-unitTime <- "h"
-unitKA <- "h-1"
-unitCL <- "L/h"
-unitV  <- "L"
+unit_dv <- "mg/L"
+unit_time <- "h"
+unit_KA <- "h-1"
+unit_CL <- "L/h"
+unit_V  <- "L"
 # Used in comment convention ; Parameter name ; Unit ; Transformtion
 
 # ------------------------------------------------------------------
@@ -52,23 +52,25 @@ one_cmt <- blueprint %>%
   use_template(templates$compartmental) %>%
   model_type(models$one_cmt_oral) %>% 
   # Add data
-  with_data(nmData) %>%
-  from_path(file.path(derivedDataDirRelBase, nmDataName)) 
+  with_data(nm_data) %>%
+  ignore("BLQ.EQ.1") %>% 
+  from_path(file.path(derived_data_dir_rel_base, nm_data_filename)) 
 
 two_cmt <- blueprint %>% 
   use_template(templates$compartmental) %>%
   model_type(models$two_cmt_oral) %>% 
   # Add data
-  with_data(nmData) %>%
-  from_path(file.path(derivedDataDir, nmDataName)) 
+  with_data(nm_data) %>%
+  ignore("BLQ.EQ.1") %>% 
+  from_path(file.path(derived_data_dir_rel_base, nm_data_filename)) 
 
 two_cmt_rate <- blueprint %>% 
   use_template(templates$compartmental) %>%
   model_type(models$two_cmt_oral) %>% 
   # Add data
-  with_data(nmDataComb) %>%
-  from_path(file.path(derivedDataDir, nmDataNameComb)) 
-
+  with_data(nm_data_comb) %>%
+  ignore("BLQ.EQ.1") %>% 
+  from_path(file.path(derived_data_dir_rel_base, nm_data_comb_filename)) 
 
 # ------------------------------------------------------------------
 #  1. Number of compartments
@@ -77,17 +79,17 @@ two_cmt_rate <- blueprint %>%
 # ---------------
 #  Run001
 # ---------------
-modelNo <- "001"
+model_no <- "001"
 
-if(modelNo=="001"){
+if(model_no=="001"){
   
   # properties
   description <- "1 cmt model, 1st order abs, BSV on CL"
-  basedOn <- NA
+  based_on <- NA
   
   # output and dir to run
-  fileName   <- paste0("run", modelNo)
-  dirName    <- paste0("dir_run", modelNo)
+  filename   <- paste0("run", model_no, ".mod")
+  dir_name    <- paste0("dir_run", model_no)
   
   # Select seed to use for NPDEs
   seed <- format(Sys.time(), "%y%m%d%H%M")
@@ -97,93 +99,96 @@ if(modelNo=="001"){
     # add parameters
     parameters(
       KA = parameter(0.8, lower_bound=0,
-                     comment = paste0("KA ;", unitKA, ";")),
+                     comment = paste0("KA ;", unit_KA, ";")),
       CL = parameter(200, lower_bound = 0.01,
-                     comment=paste0("CL ;", unitCL, ";")),
+                     comment=paste0("CL ;", unit_CL, ";")),
       V = parameter(400, lower_bound = 0, 
-                    comment=paste0("V ;",unitV, ";"))) %>%
+                    comment=paste0("V ;",unit_V, ";"))) %>%
     hierarchies(CL = 0.04) %>% 
     residual_error(PROP = 0.1)
   
   # tweak for adding tables and comments (temporary)
-  parms <- names(run001$get_params())
+  parms <- c(names(run001$get_params()), "ETA1")
   run001rend <- render(run001)
   
-  run001rend <- cltFileUpdate(run001rend)
-  run001rend <- add_comments(run001rend, refRun = basedOn,
-                             description = description, author = analystName)
+  run001rend <- cltfile_update(run001rend)
+  run001rend <- add_comments(run001rend, ref_run = based_on,
+                             description = description, 
+                             author = all_people$analyst_name)
   
   # --- write file to cluster
-  write(run001rend, file=file.path(baseModelDir, fileName))
-  # Discuss with Tarj: 
-  # build in as an option in nmproject that warns you about over-writing the file? 
+  write(run001rend, file=file.path(base_model_dir, filename))
   
   # Command line update
-  psnExecute <- executeUpdate(psnExecuteTemp, fileName, dirName) 
-  # note: nmproject does not work with clean=3
+  psn_execute <- execute_update(psn_execute_template, filename, dir_name) 
+  # note: it seems nmproject does not work with clean=3
   
   # --- Add to run using nmproject
-  mod1 <- nm(cmd = psnExecute, 
-             run_in = baseModelDir)
+  mod1 <- nm(cmd = psn_execute, 
+             run_in = base_model_dir)
+  nm_tran(mod1) # check if nm tran will give any errors
   run(mod1, quiet=F)
 }
-
 
 # ---------------
 #  Run002
 # ---------------
-modelNo <- "002"
+model_no <- "002"
 
-if(modelNo=="002"){ 
+if(model_no=="002"){ 
   
   # properties
   description <- "1 cmt model, 1st order abs, BSV on CL and V"  
-  basedOn <- "001"
+  based_on <- "001"
   
   # output and dir to run
-  fileName   <- paste0("run", modelNo)
-  dirName    <- paste0("dir_run", modelNo)
+  filename   <- paste0("run", model_no, ".mod")
+  dir_name    <- paste0("dir_run", model_no)
   
   # Select seed to use for NPDEs
   seed <- format(Sys.time(), "%y%m%d%H%M")
   
+  
+  # base run 002 on 001 - just add another BSV
   run002 <- run001 %>% 
     hierarchies(CL = 0.1, V = 0.1) 
   
   # tweak for adding tables and comments (temporary)
-  parms <- names(run002$get_params())
+  parms <- c(names(run002$get_params()), "ETA1", "ETA2")
   run002rend <- render(run002)
   
-  run002rend <- cltFileUpdate(run002rend)
-  run002rend <- add_comments(run002rend, refRun = basedOn,
-                             description = description, author = analystName)
+  run002rend <- cltfile_update(run002rend)
+  run002rend <- add_comments(run002rend, ref_run = based_on,
+                             description = description, 
+                             author = all_people$analyst_name)
   
   # --- write file to cluster
-  write(run002rend, file=file.path(baseModelDir, fileName)) 
+  write(run002rend, file=file.path(base_model_dir, filename)) 
   
   # command line update
-  psnExecute <- executeUpdate(psnExecuteTemp, fileName, dirName)  
+  psn_execute <- execute_update(psn_execute_template, filename, dir_name)  
   
   # --- Add to run using nmproject
-  mod2 <- nm(cmd = psnExecute, 
-             run_in = baseModelDir)
+  mod2 <- nm(cmd = psn_execute, 
+             run_in = base_model_dir)
+  nm_tran(mod2) # check if nm tran will give any errors
   run(mod2, quiet=F)
 }
 
 # ---------------
 #  Run003
 # ---------------
-modelNo <- "003"
+model_no <- "003"
 
-if(modelNo=="003"){ 
+if(model_no=="003"){ 
   
   # properties
   description <- "1 cmt model, 1st order abs, BSV on CL and V in block"
-  basedOn <- "002"
+  based_on <- "002"
   
   # output and dir to run
-  fileName   <- paste0("run", modelNo)
-  dirName    <- paste0("dir_run", modelNo)
+  filename   <- paste0("run", model_no, ".mod")
+  dir_name    <- paste0("dir_run", model_no)
   
   # Select seed to use for NPDEs
   seed <- format(Sys.time(), "%y%m%d%H%M")
@@ -192,103 +197,52 @@ if(modelNo=="003"){
     # add parameters
     parameters(
       KA = parameter(0.8, lower_bound=0,
-                     comment = paste0("KA ;", unitKA, ";")),
+                     comment = paste0("KA ;", unit_KA, ";")),
       CL = parameter(200, lower_bound = 0.01,
-                     comment=paste0("CL ;", unitCL, ";")),
+                     comment=paste0("CL ;", unit_CL, ";")),
       V = parameter(400, lower_bound = 0, 
-                    comment=paste0("V ;",unitV, ";"))) %>%
+                    comment=paste0("V ;",unit_V, ";"))) %>%
     hierarchies(b1 = block(0.1, 0.05, 0.1, 
                            param_names = c("CL", "V"))) %>% 
     residual_error(PROP = 0.1)
   
   # tweak for adding tables and comments (temporary)
-  parms <- names(run003$get_params())
+  parms <- c(names(run003$get_params()), "ETA1", "ETA2")
   run003rend <- render(run003)
   
   # update tables
-  run003rend <- cltFileUpdate(run003rend)
-  run003rend <- add_comments(run003rend, refRun = basedOn,
-                             description = description, author = analystName)
+  run003rend <- cltfile_update(run003rend)
+  run003rend <- add_comments(run003rend, ref_run = based_on,
+                             description = description, 
+                             author = all_people$analyst_name)
   
   # --- write file to cluster
-  write(run003rend, file=file.path(baseModelDir, fileName))
+  write(run003rend, file=file.path(base_model_dir, filename))
   
   # command line update
-  psnExecute <- executeUpdate(psnExecuteTemp, fileName, dirName)  
+  psn_execute <- execute_update(psn_execute_template, filename, dir_name)  
   
   # --- Add to run using nmproject
-  mod3 <- nm(cmd = psnExecute, 
-             run_in = baseModelDir)
+  mod3 <- nm(cmd = psn_execute, 
+             run_in = base_model_dir)
+  nm_tran(mod3) # check if nm tran will give any errors
   run(mod3, quiet=F)
-}
-
-# ---------------
-#  Run003+M3
-# ---------------
-# Not implemented in blueprint yet
-modelNo <- "003m3"
-
-if(modelNo=="003m3"){
-  
-  # properties
-  # description <- "run 003 with M3 for BLQ"
-  # basedOn <- NA  
-  #
-  # output and dir to run
-  #   fileName   <- paste0("run", modelNo)
-  #   dirName    <- paste0("dir_run", modelNo)
-  #   
-  #   # Select seed to use for NPDEs
-  #   seed <- format(Sys.time(), "%y%m%d%H%M")
-  #   
-  #   run003m3 <- one_cmt %>% 
-  #     # add parameters
-  #     parameters(
-  #       KA = parameter(0.8, lower_bound=0,
-  #                      comment = paste0("KA ;", unitKA, ";")),
-  #       CL = parameter(200, lower_bound = 0.01,
-  #                      comment=paste0("CL ;", unitCL, ";")),
-  #       V = parameter(400, lower_bound = 0, 
-  #                     comment=paste0("V ;",unitV, ";"))) %>%
-  #     hierarchies(b1 = block(0.1, 0.05, 0.1, 
-  #                            param_names = c("CL", "V"))) # %>% 
-  # #     residual_error(PROP = 0.1)
-  #   
-  #   # tweak for adding tables and comments (temporary)
-  #   parms <- names(run003m3$get_params())
-  #   run003m3rend <- render(run003m3)
-  #   
-  #   # update tables
-  #   run003m3rend <- cltFileUpdate(run003m3rend)
-  #   run003m3rend <- add_comments(run003m3rend, refRun = basedOn,
-  #                              description = description, author = analystName)
-  #   
-  #   # --- write file to cluster
-  #   write(run003m3rend, file=file.path(baseModelDir, fileName))
-  #   
-  #   # command line update
-  #   psnExecute <- executeUpdate(psnExecuteTemp, fileName, dirName)  
-  #   
-  #   # --- Add to run using nmproject
-  #   mod3m3 <- nm(cmd = psnExecute, 
-  #              run_in = baseModelDir)
-  #   run(mod3m3, quiet=F)
 }
 
 # ---------------
 #  Run004
 # ---------------
-modelNo <- "004"
+model_no <- "004"
 
-if(modelNo=="004"){
+if(model_no=="004"){
   
   # properties
   description <- "2 cmt model with 1st order abs, BSV on CL only"
-  basedOn <- "001"
+  based_on <- "001"
   
   # output and dir to run
-  fileName   <- paste0("run", modelNo)
-  dirName    <- paste0("dir_run", modelNo)
+  filename   <- paste0("run", model_no, ".mod")
+  dir_name    <- paste0("dir_run", model_no)
   
   # Select seed to use for NPDEs
   seed <- format(Sys.time(), "%y%m%d%H%M")
@@ -298,53 +252,55 @@ if(modelNo=="004"){
     # add parameters
     parameters(
       KA = parameter(5, lower_bound=0,
-                     comment = paste0("KA ;", unitKA, ";")),
+                     comment = paste0("KA ;", unit_KA, ";")),
       CL = parameter(140, lower_bound = 0.01,
-                     comment=paste0("CL ;", unitCL, ";")),
+                     comment=paste0("CL ;", unit_CL, ";")),
       V2 = parameter(200, lower_bound = 0, 
-                     comment=paste0("V2 ;",unitV, ";")),
+                     comment=paste0("V2 ;",unit_V, ";")),
       Q = parameter(15, lower_bound = 0, 
-                    comment=paste0("Q ;",unitCL, ";")),
+                    comment=paste0("Q ;",unit_CL, ";")),
       V3 = parameter(250, lower_bound = 0, 
-                     comment=paste0("V3 ;",unitV, ";"))) %>%
+                     comment=paste0("V3 ;",unit_V, ";"))) %>%
     hierarchies(CL = 0.04) %>% 
     residual_error(PROP = 0.1)
   
   # tweak for adding tables and comments (temporary)
-  parms <- names(run004$get_params())
+  parms <- c(names(run004$get_params()), "ETA1")
   run004rend <- render(run004)
   
   # update tables
-  run004rend <- cltFileUpdate(run004rend)
-  run004rend <- add_comments(run004rend, refRun = basedOn,
-                             description = description, author = analystName)
+  run004rend <- cltfile_update(run004rend)
+  run004rend <- add_comments(run004rend, ref_run = based_on,
+                             description = description, 
+                             author = all_people$analyst_name)
   
   # --- write file to cluster
-  write(run004rend, file=file.path(baseModelDir, fileName))
+  write(run004rend, file=file.path(base_model_dir, filename))
   
   # command line update
-  psnExecute <- executeUpdate(psnExecuteTemp, fileName, dirName)  
+  psn_execute <- execute_update(psn_execute_template, filename, dir_name)  
   
   # --- Add to run using nmproject
-  mod4 <- nm(cmd = psnExecute, 
-             run_in = baseModelDir)
+  mod4 <- nm(cmd = psn_execute, 
+             run_in = base_model_dir)
+  nm_tran(mod4) # check if nm tran will give any errors
   run(mod4, quiet=F)
 }
 
 # ---------------
 #  Run005
 # ---------------
-modelNo <- "005"
+model_no <- "005"
 
-if(modelNo=="005"){ 
+if(model_no=="005"){ 
   
   # properties
   description <- "2 cmt model with 1st order abs, BSV on CL and V"
-  basedOn <- "004" # and 002 (1 cmt)
+  based_on <- "004" # and 002 (1 cmt)
   
   # output and dir to run
-  fileName   <- paste0("run", modelNo)
-  dirName    <- paste0("dir_run", modelNo)
+  filename   <- paste0("run", model_no, ".mod")
+  dir_name    <- paste0("dir_run", model_no)
   
   # Select seed to use for NPDEs
   seed <- format(Sys.time(), "%y%m%d%H%M")
@@ -353,40 +309,42 @@ if(modelNo=="005"){
     hierarchies(CL = 0.1, V = 0.1) 
   
   # tweak for adding tables and comments (temporary)
-  parms <- names(run005$get_params())
+  parms <- c(names(run005$get_params()), "ETA1", "ETA2")
   run005rend <- render(run005)
   
   # update tables
-  run005rend <- cltFileUpdate(run005rend)
-  run005rend <- add_comments(run005rend, refRun = basedOn,
-                             description = description, author = analystName)
+  run005rend <- cltfile_update(run005rend)
+  run005rend <- add_comments(run005rend, ref_run = based_on,
+                             description = description, 
+                             author = all_people$analyst_name)
   
   # --- write file to cluster
-  write(run005rend, file=file.path(baseModelDir, fileName))
+  write(run005rend, file=file.path(base_model_dir, filename))
   
   # command line update
-  psnExecute <- executeUpdate(psnExecuteTemp, fileName, dirName)  
+  psn_execute <- execute_update(psn_execute_template, filename, dir_name)  
   
   # --- Add to run using nmproject
-  mod5 <- nm(cmd = psnExecute, 
-             run_in = baseModelDir)
+  mod5 <- nm(cmd = psn_execute, 
+             run_in = base_model_dir)
+  nm_tran(mod5) # check if nm tran will give any errors
   run(mod5, quiet=F)
 }
 
 # ---------------
 #  Run006
 # ---------------
-modelNo <- "006"
+model_no <- "006"
 
-if(modelNo=="006"){ 
+if(model_no=="006"){ 
   
   # properties
   description <- "2 cmt model with 1st order abs, BSV on CL and V in block"
-  basedOn <- "005" # and 003 (1 cmt)
+  based_on <- "005" # and 003 (1 cmt)
   
   # output and dir to run
-  fileName   <- paste0("run", modelNo)
-  dirName    <- paste0("dir_run", modelNo)
+  filename   <- paste0("run", model_no, ".mod")
+  dir_name    <- paste0("dir_run", model_no)
   
   # Select seed to use for NPDEs
   seed <- format(Sys.time(), "%y%m%d%H%M")
@@ -396,45 +354,41 @@ if(modelNo=="006"){
     # add parameters
     parameters(
       KA = parameter(5, lower_bound=0,
-                     comment = paste0("KA ;", unitKA, ";")),
+                     comment = paste0("KA ;", unit_KA, ";")),
       CL = parameter(140, lower_bound = 0.01,
-                     comment=paste0("CL ;", unitCL, ";")),
+                     comment=paste0("CL ;", unit_CL, ";")),
       V2 = parameter(200, lower_bound = 0, 
-                     comment=paste0("V2 ;",unitV, ";")),
+                     comment=paste0("V2 ;",unit_V, ";")),
       Q = parameter(15, lower_bound = 0, 
-                    comment=paste0("Q ;",unitCL, ";")),
+                    comment=paste0("Q ;",unit_CL, ";")),
       V3 = parameter(250, lower_bound = 0, 
-                     comment=paste0("V3 ;",unitV, ";"))) %>%
+                     comment=paste0("V3 ;",unit_V, ";"))) %>%
     hierarchies(b1 = block(0.1, 0.05, 0.1, 
                            param_names = c("CL", "V2"))) %>% 
     residual_error(PROP = 0.1)
   
   # tweak for adding tables and comments (temporary)
-  parms <- names(run006$get_params())
+  parms <- c(names(run006$get_params()), "ETA1", "ETA2")
   run006rend <- render(run006)
   
   # update tables
-  run006rend <- cltFileUpdate(run006rend)
-  run006rend <- add_comments(run006rend, refRun = basedOn,
-                             description = description, author = analystName)
+  run006rend <- cltfile_update(run006rend)
+  run006rend <- add_comments(run006rend, ref_run = based_on,
+                             description = description,
+                             author = all_people$analyst_name)
   
   # --- write file to cluster
-  write(run006rend, file=file.path(baseModelDir, fileName))
+  write(run006rend, file=file.path(base_model_dir, filename))
   
   # command line update
-  psnExecute <- executeUpdate(psnExecuteTemp, fileName, dirName)  
+  psn_execute <- execute_update(psn_execute_template, filename, dir_name)  
   
   # --- Add to run using nmproject
-  mod6 <- nm(cmd = psnExecute, 
-             run_in = baseModelDir)
+  mod6 <- nm(cmd = psn_execute, 
+             run_in = base_model_dir)
+  nm_tran(mod6) # check if nm tran will give any errors
   run(mod6, quiet=F)
 }
-
-# ---------------
-#  Run006+M3
-# ---------------
-# Not implemented yet
-
 
 # ------------------------------------------------------------------
 #  2. Investigate different absorption models
@@ -444,173 +398,168 @@ if(modelNo=="006"){
 # ---------------
 #  Run007
 # ---------------
-modelNo <- "007"
+model_no <- "007"
 
-if(modelNo=="007"){
+if(model_no=="007"){
   
   # properties
   description <- "Run 006 with lag time"
-  basedOn <- "006"
+  based_on <- "006"
   
   # output and dir to run
-  fileName   <- paste0("run", modelNo)
-  dirName    <- paste0("dir_run", modelNo)
+  filename   <- paste0("run", model_no, ".mod")
+  dir_name    <- paste0("dir_run", model_no)
   
   # Select seed to use for NPDEs
   seed <- format(Sys.time(), "%y%m%d%H%M")
   
   run007 <- run006 %>% 
     parameters(ALAG1 = parameter(0.05, lower_bound=0,
-                                 comment = paste0("ALAG;", unitTime, ";")))
+                                 comment = paste0("ALAG;", unit_time, ";")))
   
   # tweak for adding tables and comments (temporary)
-  parms <- names(run007$get_params())
+  parms <- c(names(run007$get_params()), "ETA1", "ETA2")
   run007rend <- render(run007)
   
   # update tables
-  run007rend <- cltFileUpdate(run007rend)
-  run007rend <- add_comments(run007rend, refRun = basedOn,
-                             description = description, author = analystName)
+  run007rend <- cltfile_update(run007rend)
+  run007rend <- add_comments(run007rend, ref_run = based_on,
+                             description = description, 
+                             author = all_people$analyst_name)
   
   # --- write file to cluster
-  write(run007rend, file=file.path(baseModelDir, fileName))
+  write(run007rend, file=file.path(base_model_dir, filename))
   
   # command line update
-  psnExecute <- executeUpdate(psnExecuteTemp, fileName, dirName)  
+  psn_execute <- execute_update(psn_execute_template, filename, dir_name)  
   
   # --- Add to run using nmproject
-  mod7 <- nm(cmd = psnExecute, 
-             run_in = baseModelDir)
+  mod7 <- nm(cmd = psn_execute, 
+             run_in = base_model_dir)
+  nm_tran(mod7) # check if nm tran will give any errors
   run(mod7, quiet=F)
 } 
 
 # ---------------
-#  Run007+M3
-# ---------------
-# Not implemented yet
-
-
-# ---------------
 #  Run008
 # ---------------
-modelNo <- "008"
+model_no <- "008"
 
-if(modelNo=="008"){ 
+if(model_no=="008"){ 
   
   # properties
   description <- "2 cmt with zero and first order abs, BSV on CL and V in block"
-  basedOn <- "006" 
+  based_on <- "006" 
   
   # output and dir to run
-  fileName   <- paste0("run", modelNo)
-  dirName    <- paste0("dir_run", modelNo)
+  filename   <- paste0("run", model_no, ".mod")
+  dir_name    <- paste0("dir_run", model_no)
   
   # Select seed to use for NPDEs
   seed <- format(Sys.time(), "%y%m%d%H%M")
   
   # build nonmem control file
-  run008 <- two_cmt %>% 
+  run008 <- two_cmt_rate %>% 
     # add parameters
     parameters(
       D1 = parameter(0.15, lower_bound=0,
-                     comment = paste0("D1 ;", unitTime, ";")),
+                     comment = paste0("D1 ;", unit_time, ";")),
       KA = parameter(5, lower_bound=0,
-                     comment = paste0("KA ;", unitKA, ";")),
+                     comment = paste0("KA ;", unit_KA, ";")),
       CL = parameter(140, lower_bound = 0.01,
-                     comment=paste0("CL ;", unitCL, ";")),
+                     comment=paste0("CL ;", unit_CL, ";")),
       V2 = parameter(200, lower_bound = 0, 
-                     comment=paste0("V2 ;",unitV, ";")),
+                     comment=paste0("V2 ;",unit_V, ";")),
       Q = parameter(15, lower_bound = 0, 
-                    comment=paste0("Q ;",unitCL, ";")),
+                    comment=paste0("Q ;",unit_CL, ";")),
       V3 = parameter(250, lower_bound = 0, 
-                     comment=paste0("V3 ;",unitV, ";"))) %>%
+                     comment=paste0("V3 ;",unit_V, ";"))) %>%
     hierarchies(b1 = block(0.1, 0.05, 0.1, 
                            param_names = c("CL", "V2"))) %>% 
     residual_error(PROP = 0.1)
   
   # tweak for adding tables and comments (temporary)
-  parms <- names(run008$get_params())
+  parms <- c(names(run008$get_params()), "ETA1", "ETA2")
   run008rend <- render(run008)
   
   # update tables
-  run008rend <- cltFileUpdate(run008rend)
-  run008rend <- add_comments(run008rend, refRun = basedOn,
-                             description = description, author = analystName)
+  run008rend <- cltfile_update(run008rend)
+  run008rend <- add_comments(run008rend, ref_run = based_on,
+                             description = description,
+                             author = all_people$analyst_name)
   
   # --- write file to cluster
-  write(run008rend, file=file.path(baseModelDir, fileName))
+  write(run008rend, file=file.path(base_model_dir, filename))
   
   # command line update
-  psnExecute <- executeUpdate(psnExecuteTemp, fileName, dirName)  
+  psn_execute <- execute_update(psn_execute_template, filename, dir_name)  
   
   # --- Add to run using nmproject
-  mod8 <- nm(cmd = psnExecute, 
-             run_in = baseModelDir)
+  mod8 <- nm(cmd = psn_execute, 
+             run_in = base_model_dir)
+  nm_tran(mod8) # check if nm tran will give any errors
   run(mod8, quiet=F)
 } 
 
 # ---------------
-#  Run008+M3
-# ---------------
-
-
-# ---------------
 #  Run009
 # ---------------
-modelNo <- "009"
+model_no <- "009"
 
-if(modelNo=="009"){ 
+if(model_no=="009"){ 
   
   # properties
   description <- "2 cmt with lag time, zero and first order abs, BSV on CL and V in block"
-  basedOn <- "008"
+  based_on <- "008"
   
   # output and dir to run
-  fileName   <- paste0("run", modelNo)
-  dirName    <- paste0("dir_run", modelNo)
+  filename   <- paste0("run", model_no, ".mod")
+  dir_name    <- paste0("dir_run", model_no)
   
   # Select seed to use for NPDEs
   seed <- format(Sys.time(), "%y%m%d%H%M")
   
   run009 <- run008 %>% 
     parameters(ALAG1 = parameter(0.10, lower_bound=0,
-                                 comment = paste0("ALAG;", unitTime, ";")))
+                                 comment = paste0("ALAG;", unit_time, ";")))
   
   # tweak for adding tables and comments (temporary)
-  parms <- names(run009$get_params())
+  parms <- c(names(run009$get_params()), "ETA1", "ETA2")
   run009rend <- render(run009)
   
   # update tables
-  run009rend <- cltFileUpdate(run009rend)
-  run009rend <- add_comments(run009rend, refRun = basedOn,
-                             description = description, author = analystName)
+  run009rend <- cltfile_update(run009rend)
+  run009rend <- add_comments(run009rend, ref_run = based_on,
+                             description = description, 
+                             author = all_people$analyst_name)
   
   # --- write file to cluster
-  write(run009rend, file=file.path(baseModelDir, fileName))
+  write(run009rend, file=file.path(base_model_dir, filename))
   
   # command line update
-  psnExecute <- executeUpdate(psnExecuteTemp, fileName, dirName)  
+  psn_execute <- execute_update(psn_execute_template, filename, dir_name)  
   
   # --- Add to run using nmproject
-  mod9 <- nm(cmd = psnExecute, 
-             run_in = baseModelDir)
+  mod9 <- nm(cmd = psn_execute, 
+             run_in = base_model_dir)
+  nm_tran(mod9) # check if nm tran will give any errors
   run(mod9, quiet=F)
 } 
 
 # ---------------
 #  Run010
 # ---------------
-modelNo <- "010"
+model_no <- "010"
 
-if(modelNo=="010"){ 
+if(model_no=="010"){ 
   
   # properties
   description <- "2 cmt with zero and first order abs, BSV on CL and V in block, BSV D1"
-  basedOn <- "008"
+  based_on <- "008"
   
   # output and dir to run
-  fileName   <- paste0("run", modelNo)
-  dirName    <- paste0("dir_run", modelNo)
+  filename   <- paste0("run", model_no, ".mod")
+  dir_name    <- paste0("dir_run", model_no)
   
   # Select seed to use for NPDEs
   seed <- format(Sys.time(), "%y%m%d%H%M")
@@ -619,23 +568,25 @@ if(modelNo=="010"){
     hierarchies(D1=0.1)
   
   # tweak for adding tables and comments (temporary)
-  parms <- names(run010$get_params())
+  parms <- c(names(run010$get_params()), "ETA1", "ETA2", "ETA3")
   run010rend <- render(run010)
   
   # update tables
-  run010rend <- cltFileUpdate(run010rend)
-  run010rend <- add_comments(run010rend, refRun = basedOn,
-                             description = description, author = analystName)
+  run010rend <- cltfile_update(run010rend)
+  run010rend <- add_comments(run010rend, ref_run = based_on,
+                             description = description,
+                             author = all_people$analyst_name)
   
   # --- write file to cluster
-  write(run010rend, file=file.path(baseModelDir, fileName))
+  write(run010rend, file=file.path(base_model_dir, filename))
   
   # command line update
-  psnExecute <- executeUpdate(psnExecuteTemp, fileName, dirName)  
+  psn_execute <- execute_update(psn_execute_template, filename, dir_name)  
   
   # --- Add to run using nmproject
-  mod10 <- nm(cmd = psnExecute, 
-              run_in = baseModelDir)
+  mod10 <- nm(cmd = psn_execute, 
+              run_in = base_model_dir)
+  nm_tran(mod10) # check if nm tran will give any errors
   run(mod10, quiet=F)
 } 
 
@@ -646,17 +597,17 @@ if(modelNo=="010"){
 # ---------------
 #  Run011
 # ---------------
-modelNo <- "011"
+model_no <- "011"
 
-if(modelNo=="011"){ 
+if(model_no=="011"){ 
   
   # properties
   description <- "2 cmt with zero and first order abs, BSV on CL and V in block and D1, prop and add RSV"
-  basedOn <- "010"
+  based_on <- "010"
   
   # output and dir to run
-  fileName   <- paste0("run", modelNo)
-  dirName    <- paste0("dir_run", modelNo)
+  filename   <- paste0("run", model_no, ".mod")
+  dir_name    <- paste0("dir_run", model_no)
   
   # Select seed to use for NPDEs
   seed <- format(Sys.time(), "%y%m%d%H%M")
@@ -665,21 +616,24 @@ if(modelNo=="011"){
     residual_error(ADD = 0.5)
   
   # tweak for adding tables and comments (temporary)
-  parms <- names(run010$get_params())
+  parms <- c(names(run011$get_params()), "ETA1", "ETA2", "ETA3")
   run011rend <- render(run011)
   
   # update tables
-  run011rend <- cltFileUpdate(run011rend)
+  run011rend <- cltfile_update(run011rend)
+  run011rend <- add_comments(run011rend, ref_run = based_on,
+                             description = description,
+                             author = all_people$analyst_name)
   
   # --- write file to cluster
-  write(run011rend, file=file.path(baseModelDir, fileName))
+  write(run011rend, file=file.path(base_model_dir, filename))
   
   # command line update
-  psnExecute <- executeUpdate(psnExecuteTemp, fileName, dirName)  
+  psn_execute <- execute_update(psn_execute_template, filename, dir_name)  
   
   # --- Add to run using nmproject
-  mod11 <- nm(cmd = psnExecute, 
-              run_in = baseModelDir)
+  mod11 <- nm(cmd = psn_execute, 
+              run_in = base_model_dir)
+  nm_tran(mod11) # check if nm tran will give any errors
   run(mod11, quiet=F)
 } 
-
