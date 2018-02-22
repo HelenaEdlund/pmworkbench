@@ -19,7 +19,7 @@ knitr::opts_knit$set(root.dir=find_root(has_file("OpenProject.Rproj")))
 # Note: R markdown opens a new R session, your global environment is not available.
 ```
 
-Load the dataset as prepared by "s01_datasetPrep.R":
+Load the dataset as prepared by "s01_dataset_preparation.R":
 ```{r, echo=T, message=F}
 load(file=file.path("./Scripts","s01.RData"))
 # load packages
