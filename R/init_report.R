@@ -1,25 +1,44 @@
 #' initialize a project
 #' @param path path to copy to, defaults to current working dir
-#' @param proj_type project template type, default poppk_workflow
+#' @param template project template type, default: poppk_workflow
+#' @param 
+#' @importFrom purrr discard
 #' @export
-init_project <- function(path = ".", proj_type = "poppk_workflow") {
-  if (!dir.exists(path)) {
-    dir.create(path, recursive = TRUE)
-  }
-  project_folder <-  system.file(proj_type, package = "pmworkbench")
+init_project <- function(path = ".", template = "poppk_workflow",  overwrite = FALSE) {
+  
+  project_folder <-  package_filepath(template)
   if (project_folder == "") {
-    stop(glue::glue("no report template detected for type:  {proj_type}"))
+    stop(glue::glue("no template detected for type:  {proj_type}, 
+                    check available via `pmworkbench_templates()`"))
   }
-  project_files <- dir(project_folder, recursive = TRUE)
+  
+  if (dir.exists(path) && !overwrite) {
+    if(length(list_files(path))) {
+      stop_failure("files already detected in folder ", 
+              crayon::red(path), 
+              ", set overwrite = TRUE to overwrite")
+    }
+  }
+  
+  if (!dir.exists(path)) {
+    mkdirp(path)
+  }
+  
+  project_files <- list_files(project_folder) %>%
+    discard(is_dir)
   to_copy <- file.path(project_folder, project_files)
   to_path <- file.path(path, project_files)
-  purrr::map2(to_copy, to_path, function(.from, .to) {
-    dir_name <- dirname(.to)
-    if (!dir.exists(dir_name)) {
-      dir.create(dir_name, recursive = TRUE)
-    }
-    file.copy(.from, .to)
-    })
+  
+  to_dirs <- unique(dirname(to_path)) %>% discard(~ .x == ".") 
+  
+  purrr::map(to_dirs, mkdirp)
+  done("directory structure created")
+  
+  
+  file.copy(to_copy, to_path)
+  done("template files copied")
+  
+  done("template ", crayon::blue(template), " available at ", crayon::blue(path) )
   return(TRUE) 
   
   # Add more informative message here
@@ -30,8 +49,8 @@ init_project <- function(path = ".", proj_type = "poppk_workflow") {
 
 #' show report templates
 #' @export
-report_templates <- function(){
-  fullList <- dir(system.file(package = "pmworkbench"), recursive = F) 
+pmworkbench_templates <- function(){
+  fullList <- dir(package_filepath(), recursive = F) 
   # don't show package files
   templates <- 
     fullList[! fullList %in% 

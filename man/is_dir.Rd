@@ -12,4 +12,3 @@ is_dir(x)
 \description{
 detect if a filepath is for a directory
 }
-

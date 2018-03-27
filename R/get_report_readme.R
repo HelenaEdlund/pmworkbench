@@ -5,7 +5,7 @@
 get_report_readme <- 
   function(path = ".", proj_type = "poppk_workflow"){
   
-  packagePaths <- list.dirs(system.file(package = "xreport"), recursive = F)
+  packagePaths <- list.dirs(package_filepath(), recursive = F)
   readMePath <- packagePaths[stringr::str_detect(packagePaths, "ReadMeFiles")]
   readMeName <- paste0(proj_type, "_readme.docx")
   
