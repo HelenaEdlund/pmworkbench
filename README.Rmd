@@ -6,13 +6,13 @@ PMWORKBENCH
 R package serving as a repository for (sets of) template scripts: includes a combination of .R, .Rmd and .Rwd files. 
 
 ```{r}
-library(xreport)
-# library(x_pmworkbench)
+library(xpmworkbench)
 ```
 
-Currently containing: 
+Create a new project folder via:
+
 ```{r}
-report_templates()
+init_project("<folder-to-create>")
 ```
 
 ## Download templates
