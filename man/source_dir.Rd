@@ -14,3 +14,4 @@ source_dir(path, trace = TRUE, ...)
 \description{
 source all .R files in a directory
 }
+
