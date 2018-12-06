@@ -1,7 +1,7 @@
 Package: xpmworkbench
-Version: 0.1.0
-Title: summarize data based on common structures
-Description: summarize data based on common structures
+Version: 0.1.0.9001
+Title: Respoitory of templates for pharmacometric projects
+Description: Respoitory of templates for pharmacometric projects
 Authors@R: c(
     person("helena", "edlund", email = "helena.edlund@astrazeneca.com", role = c("aut", "cre")),
     person("devin", "pastoor", email = "devin.pastoor@gmail.com", role = c("aut"))
@@ -17,4 +17,8 @@ Suggests:
 Imports:
     dplyr (>= 0.5.0),
     purrr,
-    magrittr
+    magrittr,
+    clipr,
+    crayon,
+    clisymbols,
+    debugme
