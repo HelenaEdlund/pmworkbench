@@ -4,9 +4,10 @@ author: "Author"
 date: "Date"
 output: 
   html_document:
-    toc: true
+    number_sections: yes
+    self_contained: no
+    toc: yes
     toc_depth: 2
-    number_sections: true
 params:
   print_results: FALSE
 ---
