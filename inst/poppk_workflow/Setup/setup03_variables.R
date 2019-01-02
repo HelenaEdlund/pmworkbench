@@ -1,10 +1,10 @@
 ###################################################
-# setup03_projectVariables.R
+# setup03_variables.R
 # 
 # Author: 
 # Created on: 
 # Description: Set variables used throughout workflow
-# Dependencies: None
+# Dependencies: setup01_rEnvironment.R
 ###################################################
 
 # Note, this script is a little bit of a mixbag for reporting and workflow. 
@@ -94,3 +94,6 @@ labs_conc <- paste0(drug_name," concentration (", dv_unit,")")
 
 # Re-occuring x-axis breaks
 tapd_breaks <- c(0, 2, 4, 6, 8, seq(from=12, to=200, by=6))
+
+############ Save environment ############
+save.image(file = file.path("Scripts",'Setup',"setup_variables.RData"))

@@ -4,7 +4,7 @@
 # Author: 
 # Created on: 
 # Description: Prepare R environment by loading libraries and setting global options
-# Dependencies: None
+# Dependencies: setup02_directories.R
 ###################################################
 
 # ----------- If needed: do this at first set up -------------------
@@ -29,3 +29,4 @@ library(GGally)
 # Misc
 library(zoo)
 library(PKNCA)
+
