@@ -18,7 +18,7 @@ template_download <- function(path = "./Scripts",
                               template_type = "poppk_workflow",
                               overwrite = FALSE) {
     
-    project_folder <- package_filepath(template)
+    project_folder <- package_filepath(template_type)
     if (project_folder == "") {
       stop(glue::glue("No template detected for type:  {template_type},
                       check available via `template_available()`"))
@@ -50,7 +50,7 @@ template_download <- function(path = "./Scripts",
     file.copy(to_copy, to_path)
     done("Template files copied")
     
-    done("Template ", crayon::blue(template), " available at ", crayon::blue(path) )
+    done("Template ", crayon::blue(template_type), " available at ", crayon::blue(path) )
     return(TRUE) 
   }
 

@@ -11,7 +11,7 @@ is_dir <- function(x) {
 #' @details
 #' a light wrapper around system.file
 package_filepath <- function(...) {
-  system.file(..., package = "xpmworkbench")
+  system.file(..., package = "pmworkbench")
 }
 
 # helpers pulled in from https://github.com/dpastoor/devutils initially on Jan 2018
