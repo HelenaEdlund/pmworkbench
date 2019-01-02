@@ -7,7 +7,7 @@
 source_dir(path, trace = TRUE, ...)
 }
 \arguments{
-\item{path}{file paths}
+\item{path}{file path}
 
 \item{trace}{}
 
