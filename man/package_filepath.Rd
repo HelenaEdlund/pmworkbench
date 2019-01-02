@@ -15,4 +15,3 @@ get a file or dir from a the package
 \details{
 a light wrapper around system.file
 }
-

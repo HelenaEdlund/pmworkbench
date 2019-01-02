@@ -14,4 +14,3 @@ mkdirp(.dir, verbose = FALSE)
 \description{
 recursively create a dir
 }
-

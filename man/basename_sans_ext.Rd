@@ -12,4 +12,3 @@ basename_sans_ext(.x)
 \description{
 get the basename of a filepath, minus any extensions
 }
-

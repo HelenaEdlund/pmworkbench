@@ -18,4 +18,3 @@ set of template R and Rmarkdown script files
 \description{
 Downloads a set of template scripts for nlme projects in nonmem
 }
-

@@ -12,4 +12,3 @@ set of template R and Rmarkdown script files
 \description{
 Show available project templates
 }
-

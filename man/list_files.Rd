@@ -38,4 +38,3 @@ list files, including hidden ones, in a directory
 
 list files, including hidden ones, in a directory
 }
-

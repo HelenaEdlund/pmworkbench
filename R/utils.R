@@ -14,6 +14,28 @@ package_filepath <- function(...) {
   system.file(..., package = "pmworkbench")
 }
 
+#' Source all .R/.r scripts in a directory
+#' @param path file path
+#' @param trace 
+#' @param ... arguments to pass to source
+#' @export
+
+source_dir <- function(path, trace=TRUE, ...){
+  
+  r_scripts <- list.files(path, pattern = "[.][Rr]$")
+  
+  if(length(r_scripts) == 0) {
+    stop("Provided path does not contain any R scripts")
+  }
+  
+  for(files in r_scripts){
+    if(trace) cat(files, ":")
+    source(file.path(path, files), ...)
+    if(trace) cat("\n")
+  }
+}
+
+
 # helpers pulled in from https://github.com/dpastoor/devutils initially on Jan 2018
 
 #' get the basename of a filepath, minus any extensions
