@@ -50,7 +50,7 @@ template_download <- function(path = "./Scripts",
     file.copy(to_copy, to_path)
     done("Template files copied")
     
-    done("Template ", crayon::blue(template_type), " available at ", crayon::blue(path) )
+    done(crayon::blue(template_type), " templates available at ", crayon::blue(path) )
     return(TRUE) 
   }
 
@@ -74,6 +74,6 @@ template_available <- function(){
   templates <- 
     fullList[! fullList %in% 
                c("DESCRIPTION", "help", "html", "INDEX",
-                 "Meta", "NAMESPACE", "R","ReadMeFiles")]
+                 "Meta", "NAMESPACE", "R","ReadMeFiles","packageDevelopment")]
   return(templates)
 }
