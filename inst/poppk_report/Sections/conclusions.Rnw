@@ -1,5 +1,0 @@
-\section{Conclusions} \label{sec:conclusions}
-
-Primary Audience of this section: All readers
-Provide the impact of findings, preferably, in a non-technical language 
-The conclusion may be presented as a single summative paragraph or a bullet list.
