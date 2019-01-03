@@ -1,0 +1,241 @@
+---
+title: "NONMEM dataset preparation"
+author: "Author"
+date: "Date"
+output: 
+  html_document:
+params:
+  print_csv: FALSE
+---
+
+```{r setup, include=F}
+###################################################
+# s07_nm_datasets.Rmd
+# Description: Dataset preparation for NONMEM
+# Dependencies: s01_dataset_preparation.R / s01.RData 
+###################################################
+library(rprojroot)
+knitr::opts_chunk$set(echo=T)
+knitr::opts_knit$set(root.dir=find_root(has_file("OpenProject.Rproj"))) 
+
+# Note: R markdown opens a new R session, your global environment is not available.
+```
+
+This script uses the data.frame "rawdata". That is, all rows with C=="C" are included (as required by regulatory agencies and will be excluded in the NONMEM scripts. 
+```{r environmentPrep, message=F}
+# ------------------------------------------------------------------
+#  Prepare environment
+# ------------------------------------------------------------------
+# load packages
+source(file=file.path("Scripts","Setup","setup01_packages.R")) 
+# load output from s01_DatasetPrep.R
+load(file=file.path("Scripts","s01.RData"))
+```
+
+Are the datasets being outputted to file?
+```{r, echo=F}
+params$print_csv
+```
+
+#  Selection of columns and re-naming for NONMEM 
+```{r}
+# Only numeric columns
+cols <- c("C","NMSEQSID","TAFD","TAPD","AMT","DV","LNDV","MDV","EVID",
+          "CMT","BLQ","OCC","STUDYID","COHORT","DOSE","AGE","SEXM","RACE",
+          "ETHNIC","BSCR","BEGFR","BRENAL","BHT","BWT","BBMI","FREQ")
+
+# use rawdata: contains all "C" and numeric versions of columns
+nm_data <- rawdata %>% select(cols)  
+
+# Comment out rows with negative time (pre-first dose samples)
+nm_data <- nm_data %>% 
+  mutate(C = ifelse(TAFD < 0, "C", C))
+
+# rename NMSEQSID to ID and TAFD to TIME
+nm_data <- nm_data %>% 
+  rename(ID = NMSEQSID, 
+         TIME = TAFD) 
+
+# use ln transformed data?
+# nm_data <- nm_data %>% 
+#   rename(NORMDV = DV, 
+#          DV = LNDV) 
+```
+
+# Imputation of missing covariates
+```{r}
+base_data <- nm_data %>% filter(!duplicated(ID))
+
+## Categorical covariates: model as separate groups and potentially merge with other
+nm_data <- nm_data %>% 
+  mutate(BRENAL = ifelse(is.na(BRENAL), -99, BRENAL))
+
+## Continous covariates: impute based on median (stratified by sex if appropriate)
+nm_data <- nm_data %>% 
+  mutate(
+    # Height 
+    BHT = ifelse(is.na(BHT) & SEXM==0 ,
+                 median(base_data$BHT[base_data$SEXM==0], na.rm=T),
+                 BHT),
+    BHT = ifelse(is.na(BHT) & SEXM==1,
+                 median(base_data$BHT[base_data$SEXM==1], na.rm=T),
+                 BHT), 
+    # Weight
+    BWT = ifelse(is.na(BWT) & SEXM==0 ,
+                 median(base_data$BWT[base_data$SEXM==0], na.rm=T),
+                 BWT),
+    BWT = ifelse(is.na(BWT) & SEXM==1,
+                 median(base_data$BWT[base_data$SEXM==1], na.rm=T),
+                 BWT), 
+    # Calculate BMI based on imputed (and reported) values
+    BBMI = ifelse(is.na(BBMI), 
+                  nm_data$BWT[is.na(nm_data$BBMI)] / (nm_data$BHT[is.na(nm_data$BBMI)]/100)^2, 
+                  BBMI), 
+    # # Calculate BSA based on imputed (and reported) values (Dubois&Dubois)
+    # BBSA = ifelse(is.na(BBSA), 
+    #               0.007184 * ((nm_data$BHT[is.na(nm_data$BBSA)])^0.725) *
+    #                 (nm_data$BWT[is.na(nm_data$BBSA)]^0.425), BBSA), 
+    # # CrCL
+    # BCRCL = ifelse(is.na(BCRCL) & SEXM==0, 
+    #                median(base_data$BCRCL[base_data$SEXM==0], na.rm=T), 
+    #                BCRCL), 
+    # BCRCL = ifelse(is.na(BCRCL) & SEXM==1, 
+    #                median(base_data$BCRCL[base_data$SEXM==1], na.rm=T), 
+    #                BCRCL), 
+    # eGFR
+    BEGFR = ifelse(is.na(BEGFR) & SEXM==0,
+                   median(base_data$BEGFR[base_data$SEXM==0], na.rm=T), 
+                   BEGFR), 
+    BEGFR = ifelse(is.na(BEGFR) & SEXM==1,
+                   median(base_data$BEGFR[base_data$SEXM==1], na.rm=T), 
+                   BEGFR),
+    # SCR
+    BSCR = ifelse(is.na(BSCR),
+                  median(base_data$BSCR, na.rm=T), 
+                  BSCR)
+  )
+```
+
+# Output and naming of dataset
+The dataset names are saved in variables that are used to update the nonmem control-files later on.
+
+## No. 1: original with imputed covariates
+```{r}
+# Dataset name and path to location
+nm_data_filename <- paste0(drug_name,"_nm_", delivery_date,".csv")
+out_file <- file.path(derived_data_dir, nm_data_filename)
+
+# Write dataset 
+if(params$print_csv){ 
+  write.csv(nm_data, file=out_file, row.names=F, quote=F, na = ".") 
+}
+```
+
+## No. 2: added RATE for estimation of zero-order input
+```{r}
+## Add a RATE column with values -2 at dosing records 
+## for estimation of zero order input (for models with zero order input)
+nm_data_comb <- nm_data %>% 
+  mutate(RATE = NA, 
+         RATE = ifelse(!is.na(AMT), -2, NA))
+
+# Dataset name and path to location
+nm_data_comb_filename <- paste0(drug_name, "_nm_", delivery_date, "_comb",".csv")
+out_file <- file.path(derived_data_dir, nm_data_comb_filename)
+  
+# Write dataset
+if(params$print_csv){
+  write.csv(nm_data_comb, file=out_file, row.names=F, quote=F, na = ".")
+}
+```
+
+## No. 3: added duplicated dose records for estimation of sequential or parallell absorption
+```{r}
+nm_data_par <- nm_data_comb   # need the RATE column so use nm_data_comb
+
+# Duplicate all dose records for estimation of zero-order input into central (cmt==2)
+doses <- nm_data_par %>% 
+  filter(EVID==1) %>% 
+  mutate(CMT=2)
+
+# Modify record in dataset for which we use Ka         
+nm_data_par <- nm_data_par %>% 
+  mutate(RATE = ifelse(EVID==1, NA, RATE))
+
+# Merge duplicated doses with data and sort by ID and time
+nm_data_par <- rbind(nm_data_par, doses) %>% 
+  arrange(ID, TIME)
+
+# Dataset name and path to location
+nm_data_par_filename <- paste0(drug_name, "_nm_", delivery_date, "_par",".csv")
+out_file <- file.path(derived_data_dir, nm_data_par_filename)
+
+# Write dataset
+if(params$print_csv){
+  write.csv(nm_data_par, file=out_file, row.names=F, quote=F, na = ".")
+}
+```
+
+## No. 4: added dummy rows for multiple dose transit compartment model
+```{r}
+## Add dummy variables at time of dosing in order 
+## to aviod negative TAD for transit compartment model
+nm_data_transit <- nm_data
+
+# Use dose records and modify to merge right before next dose
+transit_dummy <- nm_data_transit %>%
+  # not needed for first dose
+  filter(!is.na(AMT) & TIME !=0) %>% 
+  # change evid to 2, the time to 10 min before the dose, AMT to 0
+  # only baseline values for covariates so does not need to change these
+  mutate(EVID = 2, 
+         AMT = NA, 
+         TIME = TIME - (10/60), 
+         TAPD = NA, 
+         CMT = 2)
+
+# Bind with the original data and sort by ID and time
+nm_data_transit <- rbind(nm_data_transit, transit_dummy) %>% 
+  arrange(ID, TIME)
+rownames(nm_data_transit) <- NULL
+
+# Dataset name and path to location
+nm_data_transit_filename <- paste0(drug_name, "_nm_", delivery_date, "_transit",".csv")
+out_file <- file.path(derived_data_dir, nm_data_transit_filename)
+
+# Write dataset 
+if(params$print_csv){
+  write.csv(nm_data_transit, file=out_file, row.names=F, quote=F, na = ".")
+}
+```
+
+# List of prepared datasets
+```{r, echo=F}
+# Save dataframe with number of datasets and modifications done. 
+nm_datasets <- 
+  data.frame(filename = c(nm_data_filename,nm_data_comb_filename,
+                          nm_data_par_filename,nm_data_transit_filename), 
+            Description = 
+              c("Dataset prepared for NONMEM use: (i) only numerical columns selected, (ii) missing covariates imputed, (iii) NMSEQSID renamed to ID, (iv) TAFD renamed to TIME",
+                "RATE column added to estimate duration of zero-order absorption", 
+                "Duplicated dose record added for estimation of sequential or parallel zero- and first order absorption",
+                "Dummy variable added at 10 min before each dose in order to avoid negative time after dose results for transit compartment model"))
+dust(nm_datasets)
+```
+
+```{r, echo=F}
+# Write dataset 
+if(params$print_csv){
+  write.csv(nm_datasets, 
+            file=file.path(derived_data_dir, "prepared_datasets.csv"), 
+            row.names=F, quote=T)
+}
+```
+
+# Save environment for use in model development
+```{r}
+# Save environment to be used in developement scripts 
+rm("params") # remove rmarkdown params or it will cause issues in the next script
+# this will generate in error but all the output is generated as should.
+save.image(file=file.path(scripts_dir,"s07.RData"))
+```

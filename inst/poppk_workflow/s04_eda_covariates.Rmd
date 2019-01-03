@@ -1,0 +1,641 @@
+---
+title: "Exploratory data analysis: Covariates"
+author: "Author"
+date: "Date"
+output: 
+  html_document:
+    number_sections: yes
+    self_contained: no
+    toc: yes
+    toc_depth: 2
+params:
+  print_results: FALSE
+---
+
+```{r setup, include=F}
+###################################################
+# s04_eda_cvariates.Rmd
+# Description: Exploratory data analysis of covariates for population PK analysis
+# Dependencies: s01_dataset_preparation.R / s01.RData
+###################################################
+library(rprojroot)
+knitr::opts_chunk$set(echo=F)
+knitr::opts_knit$set(root.dir=find_root(has_file("OpenProject.Rproj"))) 
+# For correct printing of dust tables
+options(pixie_interactive=F)
+# Note: R markdown opens a new R session, your global environment is not available.
+```
+
+This script uses the data.frame "data", loaded from s01.RData. That is, all rows with C=="C" has been excluded for exploratory data analysis.
+```{r environmentPrep, echo=T, message=F}
+# ------------------------------------------------------------------
+#  Prepare environment
+# ------------------------------------------------------------------
+# load packages
+source(file = file.path("Scripts","Setup","setup01_packages.R")) 
+# load output from s01_DatasetPrep.R
+load(file=file.path("Scripts","s01.RData"))
+
+# White background in plots
+theme_set(theme_bw()) # to be replaced with a azTheme
+update_geom_defaults("point", list(shape = 1))
+```
+
+Are the plots and tables also being written to file?
+```{r}
+params$print_results
+```
+
+# Baseline covariates
+## Numeric summaries
+### Entire dataset
+The markdown/latex notation for tables does not work for html output. Notified the authour of pixidust.
+```{r cont_tab, warning=F, message=F}
+# 1. Continuous covariates
+continuous_covariates <- 
+  summarize_cov(baseline_data, base_cont_cov, type="Cont")
+
+## Collaps to reportable table
+cont_tab <- 
+  continuous_covariates %>% 
+  mutate(Values = paste0(format(Mean, trim=T), " (",
+                         format(SD, trim=T),"), [",
+                         format(Min, trim=T),"-",
+                         format(Max, trim=T) ,"]"),
+         Missing = paste0(format(NMissing, trim=T), " (" , 
+                          format(PercentMissing, trim=T), ")")) %>% 
+  select("Characteristic", "Values", "Missing")
+
+# Labels in this call needs to be set for each specific dataset
+cont_tab_markdown <- cont_tab %>% 
+  mutate(Characteristic = factor(Characteristic,
+                                 levels = c("AGE", "BWT", "BHT","BBMI","BEGFR","BSCR"), 
+                                 labels = c("Age (yrs)",
+                                            "Body weight (kg)", 
+                                            "Body height (cm)",
+                                            "Body mass index (kg/m^2^)",
+                                            "eGFR (mL/min/1.73m^2^)",
+                                            "Serum creatinine (mg/dL)")))
+
+dust(cont_tab_markdown,
+     caption = "Continuous covariates") %>% 
+  sprinkle_colnames(Values = "mean (SD) [range]", Missing = "Missing (N (%))")
+```
+
+```{r, message=F, include=F}
+# --------- Save to file
+if(params$print_results){
+  # if printing to file, use latex notations for lables so that it works with the reporting
+  cont_tab_latex <- cont_tab %>% 
+    mutate(Characteristic = factor(Characteristic,
+                                   levels = c("AGE", "BWT", "BHT","BBMI","BEGFR","BSCR"), 
+                                   labels = c("Age ($years$)",
+                                              "Body weight ($kg$)", 
+                                              "Body height ($cm$)",
+                                              "Body mass index ($kg/m^{2}$)",
+                                              "eGFR ($mL/min/1.73m^{2}$)",
+                                              "Serum creatinine ($mg/dL$)")))
+  
+  write.csv(cont_tab_latex, row.names = F, 
+            file = file.path(res_eda_dir, paste0("cont_tab_", delivery_date,".csv")))
+}
+```
+
+```{r cat_tab, warning=F, message=F}
+categorical_covariates <- 
+  summarize_cov(baseline_data, base_cat_cov, type="Cat")
+
+## Collaps to reportable table
+cat_tab <- 
+  categorical_covariates %>% 
+  mutate(Values=paste0(N, " (",
+                       format(Percent, trim=T), ")")) %>% 
+  select("Characteristic", "Category", "Values")
+
+# Labels in this call needs to be set for each specific dataset
+# Use latex notation so that it works with the reporting
+cat_tab <- cat_tab %>% 
+  mutate(Characteristic = factor(Characteristic, 
+                                 levels = c("SEXM","RACE","ETHNIC","BRENAL"), 
+                                 labels = c("Sex","Race","Ethnicity","Renal impairment")), 
+         Characteristic = as.character(Characteristic), 
+         Characteristic = ifelse(duplicated(Characteristic), " ", Characteristic))
+
+dust(cat_tab, 
+     caption = "Categorical covariates") %>% 
+  sprinkle_colnames(Values = "N (%)")
+```
+
+```{r, message=F, include=F}
+#--------- Save to file
+if(params$print_results){
+  write.csv(cat_tab, row.names = F, 
+            file=file.path(res_eda_dir, paste0("cat_tab_", delivery_date,".csv")))
+} 
+```
+
+### Stratified by study
+```{r cont_tab_study, warning=F, message=F}
+
+# to be updated with dplyr notation/ put into function... 
+for(i in levels(baseline_data$OSTUDYID)){
+  # Study subset
+  dat <- baseline_data %>% filter(OSTUDYID==i)
+  # Study summary
+  temp <- summarize_cov(dat, base_cont_cov, type="Cont") %>% 
+    mutate(GROUP = i)
+
+  if(i == unique(baseline_data$OSTUDYID)[1]){
+    continuous_cov_by_study <- temp
+  } else {
+    continuous_cov_by_study <- rbind(continuous_cov_by_study, temp)
+  }
+}
+
+## Collaps to reportable table
+cont_tab_by_study <-
+  continuous_cov_by_study %>% 
+  mutate(Values = paste0(format(Mean, trim=T), " (",
+                         format(SD, trim=T),"), [",
+                         format(Min, trim=T),"-",
+                         format(Max, trim=T) ,"]"),
+         Missing = paste0(format(NMissing, trim=T), " (" , 
+                          format(PercentMissing, trim=T), ")")) %>% 
+  select("GROUP", "Characteristic", "Values", "Missing") %>% 
+  rename(Study = GROUP)
+
+# Labels in this call needs to be set for each specific dataset
+# Use latex notation so that it works with the reporting
+continuous_cov_by_study_markdown <- cont_tab_by_study %>% 
+  mutate(Characteristic = factor(Characteristic,
+                                 levels = c("AGE","BWT","BHT","BBMI","BEGFR","BSCR"),
+                                 labels = c("Age (yrs)",
+                                            "Body weight (kg)",
+                                            "Body height (cm)",
+                                            "BMI (kg/m^2^)",
+                                            "eGFR (mL/min/1.73m^2^)",
+                                            "Serum creatinine (mg/dL)")), 
+         Study = as.character(Study), 
+         Study = ifelse(duplicated(Study), "", Study))
+
+dust(continuous_cov_by_study_markdown, 
+     caption = "Continuous covariates by study") %>% 
+  sprinkle_colnames(Values = "mean (SD) [range]", Missing = "Missing (N (%))")
+```
+
+```{r, message=F, include=F}
+#--------- Save to file
+if(params$print_results){
+  # Use latex notation so that it works with the reporting
+  cont_tab_by_study_latex <- cont_tab_by_study %>% 
+    mutate(Characteristic = factor(Characteristic,
+                                   levels = c("AGE","BWT","BHT","BBMI","BEGFR","BSCR"),
+                                   labels = c("Age ($years$)",
+                                              "Body weight ($kg$)",
+                                              "Body height ($cm$)",
+                                              "BMI ($kg/m^{2}$)",
+                                              "eGFR ($mL/min/1.73m^{2}$)",
+                                              "Serum creatinine ($mg/dL$)")), 
+           Study = as.character(Study), 
+           Study = ifelse(duplicated(Study), "", Study))
+  
+  write.csv(cont_tab_by_study_latex, row.names = F, 
+            file = file.path(res_eda_dir, paste0("cont_tab_by_study_",delivery_date,".csv")))
+}
+```
+
+```{r cat_tab_study, warning=F, message=F}
+# to be updated with dplyr notation/ put into function... 
+for(i in levels(baseline_data$OSTUDYID)){
+  # Study subset
+  dat <- baseline_data %>% filter(OSTUDYID==i)
+
+  temp <- summarize_cov(dat, base_cat_cov, type="Cat") %>% 
+    mutate(GROUP = i)
+
+  if(i == unique(baseline_data$OSTUDYID)[1]){
+    categorical_cov_by_study <- temp
+  } else {
+    categorical_cov_by_study <- rbind(categorical_cov_by_study, temp)
+  }
+}
+
+## Collaps to reportable table
+cat_tab_by_study <-
+  categorical_cov_by_study %>% 
+  mutate(Values=paste0(N, " (",
+                       format(Percent, trim=T), ")")) %>% 
+  select("GROUP","Characteristic", "Category", "Values") %>% 
+  rename(Study = GROUP)
+
+# Labels in this call needs to be set for each specific dataset
+# Use latex notation sot that it works with the reporting
+cat_tab_by_study <- cat_tab_by_study %>% 
+  mutate(Characteristic = factor(Characteristic,
+         levels = c("SEXM","RACE","ETHNIC","BRENAL"),
+         labels = c("Sex","Race","Ethnicity","Renal impairment")), 
+         Characteristic = as.character(Characteristic), 
+         Characteristic = ifelse(duplicated(paste(Study, Characteristic)), "", Characteristic), 
+         Study = as.character(Study), 
+         Study = ifelse(duplicated(Study), "", Study))
+
+dust(cat_tab_by_study, 
+     caption= "Categorical covariates by study") %>% 
+  sprinkle_colnames(Values = "N (%)")
+```
+
+```{r, message=F, include=F}
+#--------- Save to file
+if(params$print_results){
+  write.csv(cat_tab_by_study, 
+            file = file.path(res_eda_dir, paste0("cat_tab_by_study_",delivery_date,".csv")),
+            row.names = F)
+}
+```
+
+### Stratified by dose
+```{r cont_tab_dose, warning=F, message=F}
+# to be updated with dplyr notation/ put into function... 
+for(i in levels(baseline_data$DOSE)){
+  # Dose group subset
+  dat <- baseline_data %>% filter(DOSE == i)
+  # Study summary
+  temp <- summarize_cov(dat, base_cont_cov, type="Cont") %>% 
+    mutate(GROUP = i)
+
+  if(i == unique(baseline_data$DOSE)[1]){
+    continuous_cov_by_dose <- temp
+  } else {
+    continuous_cov_by_dose <- rbind(continuous_cov_by_dose, temp)
+  }
+}
+
+## Collaps to reportable table
+cont_tab_by_dose <- continuous_cov_by_dose %>% 
+  mutate(Values = paste0(format(Mean, trim=T), " (",
+                         format(SD, trim=T),"), [",
+                         format(Min, trim=T),"-",
+                         format(Max, trim=T) ,"]"),
+         Missing = paste0(format(NMissing, trim=T), " (" , 
+                          format(PercentMissing, trim=T), ")")) %>% 
+  select("GROUP", "Characteristic", "Values", "Missing") %>% 
+  rename(Dose = GROUP) %>% 
+  mutate(Dose = as.numeric(Dose)) %>% 
+  arrange(Dose)
+
+# Labels in this call needs to be set for each specific dataset
+# Use latex notation so that it works with the reporting
+cont_tab_by_dose_markdown <- cont_tab_by_dose %>% 
+  mutate(Characteristic = factor(Characteristic,
+                                 levels = c("AGE","BWT","BHT","BBMI","BEGFR","BSCR"),
+                                 labels = c("Age (yrs)",
+                                            "Body weight (kg)",
+                                            "Body height (cm)",
+                                            "BMI (kg/m^2^)",
+                                            "eGFR (mL/min/1.73m^2^)",
+                                            "Serum creatinine (mg/dL)")), 
+         Dose = as.character(Dose), 
+         Dose = ifelse(duplicated(Dose),"", Dose))
+
+dust(cont_tab_by_dose_markdown, 
+     caption = "Continuous covariates by dose") %>% 
+  sprinkle_colnames(Values = "mean (SD) [range]", Missing = "Missing (N (%))")
+```
+
+```{r, message=F, include=F}
+#--------- Save to file
+if(params$print_results){
+  # Use latex notation so that it works with the reporting
+  cont_tab_by_dose_latex <- cont_tab_by_dose %>% 
+    mutate(Characteristic = factor(Characteristic,
+                                   levels = c("AGE","BWT","BHT","BBMI","BEGFR","BSCR"),
+                                   labels = c("Age ($years$)",
+                                              "Body weight ($kg$)",
+                                              "Body height ($cm$)",
+                                              "BMI ($kg/m^{2}$)",
+                                              "eGFR ($mL/min/1.73m^{2}$)",
+                                              "Serum creatinine ($mg/dL$)")), 
+           Dose = as.character(Dose), 
+           Dose = ifelse(duplicated(Dose),"", Dose))
+  
+  write.csv(cont_tab_by_dose_latex, row.names = F, 
+            file = file.path(res_eda_dir, paste0("cont_tab_by_dose_",delivery_date,".csv")))
+}
+```
+
+```{r cat_tab_dose, warning=F, message=F}
+# to be updated with dplyr notation/ put into function... 
+for(i in levels(baseline_data$DOSE)){
+  # Study subset
+  dat <- baseline_data %>% filter(DOSE == i)
+
+  temp <- summarize_cov(dat, base_cat_cov, type="Cat") %>% 
+    mutate(GROUP = i)
+
+  if(i == unique(baseline_data$DOSE)[1]){
+    categorical_tab_by_dose <- temp
+  } else {
+    categorical_tab_by_dose <- rbind(categorical_tab_by_dose, temp)
+  }
+}
+
+## Collaps to reportable table
+cat_cov_by_dose <-
+  categorical_tab_by_dose %>% 
+  mutate(Values=paste0(N, " (",
+                       format(Percent, trim=T), ")")) %>% 
+  select("GROUP","Characteristic", "Category", "Values") %>% 
+  rename(Dose = GROUP) %>% 
+  mutate(Dose = as.numeric(Dose)) %>% 
+  arrange(Dose)
+
+# Labels in this call needs to be set for each specific dataset
+# Use latex notation sot that it works with the reporting
+cat_cov_by_dose <- cat_cov_by_dose %>% 
+  mutate(Characteristic = factor(Characteristic,
+                                 levels = c("SEXM","RACE","ETHNIC","BRENAL"),
+                                 labels = c("Sex","Race","Ethnicity","Renal impairment")), 
+         Characteristic = as.character(Characteristic), 
+         Characteristic = ifelse(duplicated(paste(Dose, Characteristic)), "", Characteristic), 
+         Dose = as.character(Dose), 
+         Dose = ifelse(duplicated(Dose), "", Dose))
+
+dust(cat_cov_by_dose, 
+     caption= "Categorical covariates by dose") %>% 
+  sprinkle_colnames(Values = "N (%)")
+```
+
+```{r, message=F, include=F}
+#--------- Save to file
+if(params$print_results){
+  write.csv(cat_cov_by_dose, 
+            file = file.path(res_eda_dir,
+                             paste0("base_cat_cov_by_dose_", delivery_date,".csv")),
+            row.names = F)
+}
+```
+
+
+# Plots of distributions and correlations
+## Entire dataset
+### Continuous
+The diagonal graphs show histograms of each covariate. The lower off-diagonal graphs are scatter plots of observations (black open circles) with linear regression (black line) and its 95%
+confidence interval (grey shaded area). The lower off-diagonal graphs show the Pearson’s correlation coefficient. The graphs are displayed in red if the Pearson’s correlation coefficient is > 0.4.
+```{r cont_cont_plot, fig.width=8, fig.height=8, message=F, warning=F}
+# You may need to set up different lists if you have many covariates
+# or lumping of groups based on too few individuals etc.
+cont_vs_cont <-
+  ggpairs(baseline_data, columns = base_cont_cov,
+          diag = list(continuous = 'barDiag'),
+          upper = list(continuous = wrap(ally_cor, 
+                                         cor_method = "pearson", 
+                                         cor_threshold = 0.4)),
+          lower = list(continuous = wrap(ally_scatter_lm_cor, 
+                                         cor_method = "pearson", 
+                                         cor_threshold = 0.4)))
+print(cont_vs_cont)
+
+if(params$print_results){
+  ggsave(file=file.path(res_eda_dir, 
+                    paste0("continuous_covariates_", delivery_date,".pdf")), 
+         plot=cont_vs_cont, 
+         height=8, width=8, units = 'in', 
+         device=cairo_pdf)
+}
+
+```
+
+### Categorical
+The diagonal graphs show bar charts of each covariate. The off-diagonal graphs show the correlation between covariate categories: the black point is a visual reference point, and the numbers are percentage of subjects of a covariate split by the groups of the other covariate. For example, the bottom left graph show that within the group with normal renal function, 19% are female and 81% are male (numbers aligned left of the reference point). Similarly, within the group of females, 29% have normal, 36% have mild, 21% have moderate renal impairment and 14% is missing information (numbers aligned above the reference point). NA refers to not available, i.e., missing. 
+```{r cat_cat_plot, fig.width=9, fig.height=9, message=F}
+cat_vs_cat <-
+  ggpairs(baseline_data, columns = base_cat_cov,
+          diag = list(discrete = ally_bar),
+          upper = list(discrete = "blank"),
+          lower = list(discrete = wrap(ally_count, counts="rel"))) 
+# if "abs" is used instead of rel you will get the absolute number of patients in each group
+print(cat_vs_cat)
+
+if(params$print_results){
+  ggsave(file=file.path(res_eda_dir, paste0("categorical_covariates_",delivery_date,".pdf")), 
+         plot=cat_vs_cat, 
+         height=8, width=8, units = 'in', 
+         device=cairo_pdf)
+}
+```
+
+
+### Categorical versus continuous
+The black line within the box shows the median and the box's upper and lower edges show the inter quartile range (IQR). Whiskers extend to the highest value that is within 1.5*IQR. Data beyond the end of the whiskers are outliers and plotted as points. NA refers to not available, i.e., missing.
+
+```{r cont_cat_plot, fig.width=8, fig.height=10, message=F, warning=F}
+cont_vs_cat <-
+  ggduo(baseline_data, base_cat_cov, base_cont_cov,
+        types = list(comboVertical = ally_box))
+print(cont_vs_cat)
+
+if(params$print_results){
+  ggsave(file=file.path(res_eda_dir, paste0("cont_vs_cat_covariates_",delivery_date,".pdf")), 
+         plot=cont_vs_cat, 
+         height=10, width=8, units = 'in', 
+         device=cairo_pdf)
+}
+```
+
+## Distributions stratified by study
+```{r cov_study, fig.width=2.5, fig.height=5, message=F, warning=F, include=F}
+cont_by_study <-
+  ggduo(baseline_data, "OSTUDYID", base_cont_cov,
+        types = list(comboVertical = ally_box))
+print(cont_by_study)
+cat_by_study <-
+  ggduo(baseline_data, "OSTUDYID", base_cat_cov,
+        types = list(discrete = wrap(ally_count, numbers="rel")))
+print(cat_by_study)
+
+if(params$print_results){
+  # needs to be pdf if several figures in the same file
+  pdf(file=file.path(res_eda_dir, paste0("covariates_by_study_",delivery_date,".pdf")),
+      height=5, width=2.5)
+  print(cont_by_study)
+  print(cat_by_study)
+  dev.off()
+}
+```
+
+## Distributions by dose group/regimen
+The black line within the box shows the median and the box's upper and lower edges show the inter quartile range (IQR). Whiskers extend to the highest value that is within 1.5*IQR. Data beyond the end of the whiskers are outliers and plotted as points.
+
+```{r cont_dose, fig.width=3.5, fig.height=6, message=F, warning=F}
+cont_by_dose <-
+  ggduo(baseline_data, "DOSE", base_cont_cov,
+        types = list(comboVertical = ally_box))
+print(cont_by_dose)
+```
+
+The diagonal graphs show bar charts of each covariate. The off-diagonal graphs show the correlation between covariate categories: the black point is a visual reference point, and the numbers are percentage of subjects of a variable split by the groups of the other variable. NA refers to not available, i.e., missing. See also example text for categorical covariate correlation above.
+
+```{r cat_dose, fig.width=4.5, fig.height=6, message=F, warning=F}
+cat_by_dose <-
+  ggduo(baseline_data, "DOSE", base_cat_cov,
+        types = list(discrete = wrap(ally_count, counts="rel")))
+print(cat_by_dose)
+```
+
+
+
+```{r, include=F}
+# write to file
+if(params$print_results){
+  pdf(file=file.path(res_eda_dir, paste0("covariates_by_dose_", delivery_date,".pdf")),
+      height=5, width=2.5)
+  print(cont_by_dose)
+  print(cat_by_dose)
+  dev.off()
+}
+```
+
+# Time-varying covariates versus time
+## Stratified by study
+### Continuous
+The lines connect data from one individual. Ticks indicate all individual records of the covariate in the dataset. The blue line with shaded area is a loess smooth and its 95% confidence interval indicating any overall trends in changes of covariate values over time after first dose. 
+
+```{r time_var_cont_covs, fig.height=6.5, fig.width=5.5, message=F, warning=F}
+# (these covs do actually not change with time but included them as an example)
+# If -99/other flag for missing variables is included in the dataset 
+# I recommend replacing them with NA for this plot.
+
+# Shortest and longest TAFD to set the same x-axes in plot
+tafd_range <- conc_data %>% 
+  summarize(min = min(TAFD), 
+            max = max(TAFD))
+
+# 1. Continuous cov. vs time by study
+p1 <- list()
+for(i in cols_cont_cov){
+  # Create list with each covariate vs time
+  p1[[i]] <-
+    ggplot(conc_data, aes_string(x="TAFD", y=i)) +
+    geom_point(aes_string(group="OSID"), size = 1.5, shape=124) +
+    geom_line(aes_string(group="OSID")) +
+    geom_smooth(aes_string(x="TAFD", y=i),
+                inherit.aes = F, method="loess") +
+    facet_wrap(~OSTUDYID, labeller = "label_both", nrow=2) +
+    guides(group="none") +
+    coord_cartesian(xlim = c(tafd_range$min, tafd_range$max)) +
+    labs(y=i, x = labs_TAFD)
+}
+invisible(lapply(p1, grob_draw))
+
+if(params$print_results){
+  pdf(file=file.path(res_eda_dir, paste0("time_varying_cont_cov_TAFD_", delivery_date,".pdf")),
+      height=8.5, width=11)
+  invisible(lapply(p1, grob_draw))
+  dev.off()
+}
+```
+
+### Categorical
+The lines are a step function connecting data from one individual. Ticks indicate all individual records of the covariate in the dataset. 
+
+```{r time_var_cat_covs, fig.height=6.5, fig.width=5.5, message=F, warning=F}
+p1 <- list()
+for(i in cols_cat_cov){
+  # Create list with each covariate vs time
+  p1[[i]] <-
+    ggplot(conc_data, aes_string(x="TAFD", y=i, group="OSID")) +
+    geom_point(size = 1.5, shape=124) +
+    geom_step() +
+    facet_wrap(~OSTUDYID, labeller = "label_both", nrow=2) +
+    guides(group="none") +
+    coord_cartesian(xlim = c(tafd_range$min, tafd_range$max)) + 
+    labs(y=i, x = labs_TAFD)
+}
+invisible(lapply(p1, grob_draw))
+
+if(params$print_results){
+  pdf(file=file.path(res_eda_dir,
+                 paste0("time_varying_cat_cov_TAFD_", delivery_date,".pdf")),
+      height=8.5, width=11)
+  invisible(lapply(p1, grob_draw))
+  dev.off()
+}
+```
+
+
+
+## Stratified by subject
+### Continuous
+Ticks indicate all individual records of the covariate in the dataset. 
+
+```{r ind_time_var_cont_cov, fig.height=5.5, fig.width=6.5, warning=F, message=F}
+time_var_cont_cov_plots <-  list()
+
+for(i in cols_cont_cov){
+
+  cov_range <- data.frame(
+    min = min(conc_data[,i], na.rm=T), 
+    max = max(conc_data[,i], na.rm=T))
+
+  # list of individual plots for each covariate
+  p1 <- vector("list", length(conc_data_id_splits))
+  for(j in 1:length(conc_data_id_splits)){
+    p1[[j]] <-
+      ggplot(conc_data_id_splits[[j]], aes_string(x="TAFD", y=i)) +
+      geom_point(size = 1.5, shape=124) +
+      geom_line() +
+      facet_wrap(~OSID+OSTUDYID, labeller = "label_both", nrow=3, ncol=4) +
+      coord_cartesian(xlim = c(tafd_range$min, tafd_range$max),
+                      ylim =c(cov_range$min, cov_range$max)) +
+      labs(y=i, x = labs_TAFD)
+  }
+  # join lists for all covariates
+  time_var_cont_cov_plots <- c(time_var_cont_cov_plots, p1)
+}
+
+# takes some time to print if many individuals and many covariates...
+invisible(lapply(time_var_cont_cov_plots, grob_draw))
+
+if(params$print_results){
+  pdf(file=file.path(res_eda_dir,
+                 paste0("individual_time_varying_cont_cov_TAFD_", delivery_date,".pdf")),
+      height=8.5, width=11)
+  invisible(lapply(time_var_cont_cov_plots, grob_draw))
+  dev.off()
+}
+```
+
+## Categorical
+The lines are a step function connecting data from one individual. Ticks indicate all individual records of the covariate in the dataset. 
+
+```{r ind_time_var_cat_cov, fig.height=5.5, fig.width=7, warning=F, message=F}
+time_var_cat_cov_plots <- list()
+
+for(i in cols_cat_cov){
+  # list of individual plots for each covariate
+  p1 <- vector("list", length(conc_data_id_splits))
+  for(j in 1:length(conc_data_id_splits)){
+    p1[[j]] <-
+      ggplot(conc_data_id_splits[[j]], aes_string(x="TAFD", y=i)) +
+      geom_point(shape=124, size = 1.5) +
+      geom_line() +
+      facet_wrap(~OSID+OSTUDYID, labeller = "label_both", nrow=3, ncol=4) +
+      coord_cartesian(xlim = c(tafd_range$min, tafd_range$max)) +
+      labs(y=i, x = labs_TAFD)
+    }
+  # join lists for all covariates
+  time_var_cat_cov_plots <- c(time_var_cat_cov_plots, p1)
+}
+
+# takes some time to print if many individuals and many covariates...
+invisible(lapply(time_var_cat_cov_plots, grob_draw))
+
+if(params$print_results){
+  pdf(file=file.path(res_eda_dir,
+                     paste0("individual_time_varying_cat_cov_TAFD_", delivery_date,".pdf")),
+      height=8.5, width=11)
+  invisible(lapply(time_var_cat_cov_plots, grob_draw))
+  dev.off()
+}
+```
+

@@ -1,7 +1,7 @@
-Package: xpmworkbench
+Package: pmworkbench
 Version: 0.1.0.9001
-Title: summarize data based on common structures
-Description: summarize data based on common structures
+Title: Respoitory of templates for pharmacometric projects
+Description: Respoitory of templates for pharmacometric projects
 Authors@R: c(
     person("helena", "edlund", email = "helena.edlund@astrazeneca.com", role = c("aut", "cre")),
     person("devin", "pastoor", email = "devin.pastoor@gmail.com", role = c("aut"))
@@ -14,7 +14,7 @@ LazyData: true
 RoxygenNote: 6.0.1
 Suggests:
     testthat
-Imports: 
+Imports:
     dplyr (>= 0.5.0),
     purrr,
     magrittr,

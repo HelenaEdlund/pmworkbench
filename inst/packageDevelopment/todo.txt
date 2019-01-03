@@ -1,0 +1,23 @@
+* Add testing of all functions
+
+* All plot functions should be able to take a missingFlag and exclude that from the plots/print them as NA/missing
+
+* generate azTheme
+
+* Follow up on variableList for data structure function - meeting scheduled for wednesday
+
+* What to do with the functions defined within nm templates: 
+    - executeUpdate
+    - cltFileUpdate
+    
+    
+    
+Add datasets:  
+
+Dataset with large range of dose groups to test the dose proportionality functions
+
+Dataset with more than 1 study
+
+NONMEM output file to use with r_data_staructure, nm=T
+
+If expanding to JSON: add dataspec example for that

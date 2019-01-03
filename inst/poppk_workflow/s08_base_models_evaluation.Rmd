@@ -1,0 +1,2012 @@
+---
+title: "Base model evaluation"
+author: "Author"
+date: "Date"
+output: 
+  html_document
+params:
+  print_results: FALSE
+---
+
+```{r setup, include=F}
+###################################################
+# s08_base_models_evaluation.Rmd
+# Description: Graphical and summary evaluation of base models
+# Dependencies: s07_nm_datasets.R, s08_base_model_execute.R 
+###################################################
+library(rprojroot)
+knitr::opts_chunk$set(echo=F, fig.width = 11, fig.height=8.5)
+knitr::opts_knit$set(root.dir=find_root(has_file("OpenProject.Rproj"))) 
+
+# Note: R markdown opens a new R session, your global environment is not available.
+```
+
+```{r environmentPrep, message=F}
+# ------------------------------------------------------------------
+#  Prepare environment
+# ------------------------------------------------------------------
+# load packages
+source(file=file.path("Scripts","Setup","setup01_packages.R")) 
+# load output from s07_nm_datasets.R
+load(file=file.path("Scripts","s07.RData"))
+
+# White background in plots
+theme_set(theme_bw()) # to be replaced with a azTheme
+update_geom_defaults("point", list(shape = 1))
+```
+
+Are the plots and tables also being written to file?
+```{r}
+params$print_results
+```
+
+#  Run 001
+
+```{r, run001}
+model_to_eval <- "001"
+
+if(model_to_eval=="001"){
+  
+  # -----------------------
+  #  Read in output files
+  # -----------------------
+  run_db <- xpose_data(runno = model_to_eval, 
+                       dir = base_model_dir)
+  # Extract run description
+  descr <- run_db$summary$value[run_db$summary$label=="descr"]
+  
+  # -----------------------
+  #  Define output file names and title pages
+  # -----------------------
+  graphics_filepath      <- file.path(res_base_model_dir, 
+                                      paste0("evaluation_run", model_to_eval,".pdf"))
+  ind_graphics_filepath  <- file.path(res_base_model_dir, 
+                                      paste0("individual_fits_run", model_to_eval,".pdf"))
+  
+  eval_titlepage         <- paste0("Goodness-of-fit plots \n\n Run", model_to_eval, 
+                                   "\n\n", descr)
+  ind_eval_titlepage     <- paste0("Individual fits \n\n Run", model_to_eval, 
+                                   "\n\n", descr)
+  
+  # -----------------------
+  #  Run summary
+  # -----------------------
+  summary(run_db)
+  
+  # -----------------------
+  #  Parameter summary
+  # -----------------------
+  prm_table(run_db)
+  
+  # # Or if you prefer the sumo output:
+  # system_cmd(paste0('sumo run', model_to_eval,".lst"), 
+  #            dir=base_model_dir)
+  
+  # -----------------------
+  #  Graphical evaluation
+  # -----------------------
+  # Extract data and create sub datasets
+  tab <- run_db$data$data[[1]]
+  # Extract which etas to plot
+  etas <- names(tab)[(str_detect(names(tab), "ETA.*"))]
+  
+  # R settings for dataset
+  tab <- r_data_structure(tab, # requires data.frame
+                          data_spec = file.path(source_data_dir, dataspec_filename),
+                          nm_output = T)
+  tab <- add_variables(tab)
+  
+  nm_conc_data <- tab %>% filter(EVID==0)
+  nm_baseline <- nm_conc_data %>% filter(!duplicated(NMSEQSID))
+  
+  # ------ 1. GOF pooled data ----------
+  model_evaluation <-
+    list(gg_title_plot(eval_titlepage))
+  
+  model_evaluation$basic_gof <- 
+    arrangeGrob( # grid.arrange(
+      gg_obs_vs_pred(nm_conc_data, y=DV, x=PRED), 
+      gg_obs_vs_pred(nm_conc_data, y=DV, x=IPRED), 
+      gg_residuals(nm_conc_data, y=IWRESI, x=TIME, absolute=T), 
+      gg_residuals(nm_conc_data, y=CWRES, x=PRED), 
+      nrow=2)
+  
+  model_evaluation$cwres <- 
+    arrangeGrob( # grid.arrange(
+      gg_residuals(nm_conc_data, y=CWRES, x=TIME), 
+      gg_residuals(nm_conc_data, y=CWRES, x=TAPD), 
+      gg_residuals(nm_conc_data, y=CWRES, x=PRED), 
+      gg_qq_plot(nm_conc_data, sample=CWRES),
+      nrow=2)
+  
+  model_evaluation$npde <- 
+    arrangeGrob( # grid.arrange(
+      gg_residuals(nm_conc_data, y=NPDE, x=TIME), 
+      gg_residuals(nm_conc_data, y=NPDE, x=TAPD), 
+      gg_residuals(nm_conc_data, y=NPDE, x=PRED), 
+      gg_qq_plot(nm_conc_data, sample=NPDE),
+      nrow=2)
+  
+  ## ------ 2. Distribution of individual parameters ----------
+  model_evaluation$ind_parms <- 
+    ggpairs(nm_baseline, columns = etas, 
+            diag = list(continuous = "barDiag", na.rm=T), 
+            upper = list(continuous = "blank"), 
+            lower = list(continuous = ally_scatter_lm_cor))
+  
+  # Print
+  invisible(lapply(model_evaluation, grob_draw))
+  
+  ## ------ 3. Individual fits ----------
+  # Takes time to print, comment out the ones you don't need
+  ind_nm_data_split <-
+    nm_conc_data %>% 
+    # OCC column needs to be factor for individual graphics
+    mutate(OCC = factor(OCC, levels = sort(unique(OCC)))) %>% 
+    ind_data_split(id="NMSEQSID")
+  
+  individual_fits <-
+    list(gg_title_plot(ind_eval_titlepage))
+  
+  # TAPD
+  individual_fits$t1 <- 
+    gg_title_plot("Concentrations versus Time after dose")
+  
+  p <- vector("list",length(ind_nm_data_split))
+  for(i in 1:length(ind_nm_data_split)){
+    p[[i]] <- 
+      gg_conc_time_ind(ind_nm_data_split[[i]],
+                       x=TAPD, id=NMSEQSID, occ=OCC, 
+                       facet_scales = NULL) + 
+      labs(y=labs_conc, x=labs_TAPD)
+  }
+  individual_fits <- c(individual_fits, p)
+  
+  # TAD log Y
+  individual_fits$t2 <- 
+    gg_title_plot("Concentrations versus Time after dose \n\n Log y")
+  
+  p <- vector("list",length(ind_nm_data_split))
+  for(i in 1:length(ind_nm_data_split)){
+    p[[i]] <- 
+      gg_conc_time_ind(ind_nm_data_split[[i]],
+                       x=TAPD, id=NMSEQSID, occ=OCC, 
+                       facet_scales = NULL) + 
+      scale_y_log10() + 
+      labs(y=labs_conc, x=labs_TAPD)
+  }
+  individual_fits <- c(individual_fits, p)
+  
+  # TIME
+  individual_fits$t3 <- gg_title_plot("Concentrations versus Time")
+  
+  p <- vector("list",length(ind_nm_data_split))
+  for(i in 1:length(ind_nm_data_split)){
+    p[[i]] <- 
+      gg_conc_time_ind(ind_nm_data_split[[i]],
+                       x=TIME, id=NMSEQSID, occ=OCC) + 
+      labs(y=labs_conc, x=labs_TAFD)
+  }
+  individual_fits <- c(individual_fits, p)
+  
+  # TIME log Y
+  individual_fits$t4 <- 
+    gg_title_plot("Concentrations versus Time \n\n Log y")
+  
+  p <- vector("list",length(ind_nm_data_split))
+  for(i in 1:length(ind_nm_data_split)){
+    p[[i]] <- 
+      gg_conc_time_ind(ind_nm_data_split[[i]],
+                       x=TIME, id=NMSEQSID, occ=OCC) +
+      scale_y_log10() + 
+      labs(y=labs_conc, x=labs_TAFD)
+  }
+  individual_fits <- c(individual_fits, p)
+  
+  # Print
+  invisible(lapply(individual_fits, grob_draw))
+  
+  if(params$print_results){
+    # Print to file
+    pdf(file = graphics_filepath, height=8.5, width=11)
+    invisible(lapply(model_evaluation, grob_draw))
+    dev.off()
+    
+    pdf(file=ind_graphics_filepath, height=8.5, width=11)
+    invisible(lapply(individual_fits, grob_draw))
+    dev.off()
+  }
+}
+```
+
+#  Run002
+
+```{r, run002}
+model_to_eval <- "002"
+
+if(model_to_eval=="002"){
+  
+  # -----------------------
+  #  Read in output files
+  # -----------------------
+  run_db <- xpose_data(runno = model_to_eval, 
+                       dir = base_model_dir)
+  # Extract run description
+  descr <- run_db$summary$value[run_db$summary$label=="descr"]
+  
+  # -----------------------
+  #  Define output file names and title pages
+  # -----------------------
+  graphics_filepath      <- file.path(res_base_model_dir, 
+                                      paste0("evaluation_run", model_to_eval,".pdf"))
+  ind_graphics_filepath  <- file.path(res_base_model_dir, 
+                                      paste0("individual_fits_run", model_to_eval,".pdf"))
+  
+  eval_titlepage         <- paste0("Goodness-of-fit plots \n\n Run", model_to_eval, 
+                                   "\n\n", descr)
+  ind_eval_titlepage     <- paste0("Individual fits \n\n Run", model_to_eval, 
+                                   "\n\n", descr)
+  
+  # -----------------------
+  #  Run summary
+  # -----------------------
+  summary(run_db)
+  
+  # -----------------------
+  #  Parameter summary
+  # -----------------------
+  prm_table(run_db)
+  
+  # # Or if you prefer the sumo output:
+  # system_cmd(paste0('sumo run', model_to_eval,".lst"), 
+  #            dir=base_model_dir)
+  
+  # -----------------------
+  #  Graphical evaluation
+  # -----------------------
+  # Extract data and create sub datasets
+  tab <- run_db$data$data[[1]]
+  # Extract which etas to plot
+  etas <- names(tab)[(str_detect(names(tab), "ETA.*"))]
+  
+  # R settings for dataset
+  tab <- r_data_structure(tab, # requires data.frame
+                          data_spec = file.path(source_data_dir, dataspec_filename),
+                          nm_output = T)
+  tab <- add_variables(tab)
+  
+  nm_conc_data <- tab %>% filter(EVID==0)
+  nm_baseline <- nm_conc_data %>% filter(!duplicated(NMSEQSID))
+  
+  # ------ 1. GOF pooled data ----------
+  model_evaluation <-
+    list(gg_title_plot(eval_titlepage))
+  
+  model_evaluation$basic_gof <- 
+    arrangeGrob( # grid.arrange(
+      gg_obs_vs_pred(nm_conc_data, y=DV, x=PRED), 
+      gg_obs_vs_pred(nm_conc_data, y=DV, x=IPRED), 
+      gg_residuals(nm_conc_data, y=IWRESI, x=TIME, absolute=T), 
+      gg_residuals(nm_conc_data, y=CWRES, x=PRED), 
+      nrow=2)
+  
+  model_evaluation$cwres <- 
+    arrangeGrob( # grid.arrange(
+      gg_residuals(nm_conc_data, y=CWRES, x=TIME), 
+      gg_residuals(nm_conc_data, y=CWRES, x=TAPD), 
+      gg_residuals(nm_conc_data, y=CWRES, x=PRED), 
+      gg_qq_plot(nm_conc_data, sample=CWRES),
+      nrow=2)
+  
+  model_evaluation$npde <- 
+    arrangeGrob( # grid.arrange(
+      gg_residuals(nm_conc_data, y=NPDE, x=TIME), 
+      gg_residuals(nm_conc_data, y=NPDE, x=TAPD), 
+      gg_residuals(nm_conc_data, y=NPDE, x=PRED), 
+      gg_qq_plot(nm_conc_data, sample=NPDE),
+      nrow=2)
+  
+  # Print
+  invisible(lapply(model_evaluation, grob_draw))
+  
+  ## ------ 2. Distribution of individual parameters ----------
+  model_evaluation$ind_parms <- 
+    ggpairs(nm_baseline, columns = etas, 
+            diag = list(continuous = "barDiag", na.rm=T), 
+            upper = list(continuous = "blank"), 
+            lower = list(continuous = ally_scatter_lm_cor))
+  
+  ## ------ 3. Individual fits ----------
+  # Takes time to print, comment out the ones you don't need
+  ind_nm_data_split <-
+    nm_conc_data %>% 
+    # OCC column needs to be factor for individual graphics
+    mutate(OCC = factor(OCC, levels = sort(unique(OCC)))) %>% 
+    ind_data_split(id="NMSEQSID")
+  
+  individual_fits <-
+    list(gg_title_plot(ind_eval_titlepage))
+  
+  # TAPD
+  individual_fits$t1 <- 
+    gg_title_plot("Concentrations versus Time after dose")
+  
+  p <- vector("list",length(ind_nm_data_split))
+  for(i in 1:length(ind_nm_data_split)){
+    p[[i]] <- 
+      gg_conc_time_ind(ind_nm_data_split[[i]],
+                       x=TAPD, id=NMSEQSID, occ=OCC, 
+                       facet_scales = NULL) + 
+      labs(y=labs_conc, x=labs_TAPD)
+  }
+  individual_fits <- c(individual_fits, p)
+  
+  # TAD log Y
+  individual_fits$t2 <- 
+    gg_title_plot("Concentrations versus Time after dose \n\n Log y")
+  
+  p <- vector("list",length(ind_nm_data_split))
+  for(i in 1:length(ind_nm_data_split)){
+    p[[i]] <- 
+      gg_conc_time_ind(ind_nm_data_split[[i]],
+                       x=TAPD, id=NMSEQSID, occ=OCC, 
+                       facet_scales = NULL) + 
+      scale_y_log10() + 
+      labs(y=labs_conc, x=labs_TAPD)
+  }
+  individual_fits <- c(individual_fits, p)
+  
+  # TIME
+  individual_fits$t3 <- gg_title_plot("Concentrations versus Time")
+  
+  p <- vector("list",length(ind_nm_data_split))
+  for(i in 1:length(ind_nm_data_split)){
+    p[[i]] <- 
+      gg_conc_time_ind(ind_nm_data_split[[i]],
+                       x=TIME, id=NMSEQSID, occ=OCC) + 
+      labs(y=labs_conc, x=labs_TAFD)
+  }
+  individual_fits <- c(individual_fits, p)
+  
+  # TIME log Y
+  individual_fits$t4 <- 
+    gg_title_plot("Concentrations versus Time \n\n Log y")
+  
+  p <- vector("list",length(ind_nm_data_split))
+  for(i in 1:length(ind_nm_data_split)){
+    p[[i]] <- 
+      gg_conc_time_ind(ind_nm_data_split[[i]],
+                       x=TIME, id=NMSEQSID, occ=OCC) +
+      scale_y_log10() + 
+      labs(y=labs_conc, x=labs_TAFD)
+  }
+  individual_fits <- c(individual_fits, p)
+  
+  # Print
+  invisible(lapply(individual_fits, grob_draw))
+  
+  if(params$print_results){
+    # Print to file
+    pdf(file = graphics_filepath, height=8.5, width=11)
+    invisible(lapply(model_evaluation, grob_draw))
+    dev.off()
+    
+    pdf(file=ind_graphics_filepath, height=8.5, width=11)
+    invisible(lapply(individual_fits, grob_draw))
+    dev.off()
+  }
+}
+```
+
+
+#  Run003
+
+```{r, run003}
+model_to_eval <- "003"
+
+if(model_to_eval=="003"){
+  
+  # -----------------------
+  #  Read in output files
+  # -----------------------
+  run_db <- xpose_data(runno = model_to_eval, 
+                       dir = base_model_dir)
+  # Extract run description
+  descr <- run_db$summary$value[run_db$summary$label=="descr"]
+  
+  # -----------------------
+  #  Define output file names and title pages
+  # -----------------------
+  graphics_filepath      <- file.path(res_base_model_dir, 
+                                      paste0("evaluation_run", model_to_eval,".pdf"))
+  ind_graphics_filepath  <- file.path(res_base_model_dir, 
+                                      paste0("individual_fits_run", model_to_eval,".pdf"))
+  
+  eval_titlepage         <- paste0("Goodness-of-fit plots \n\n Run", model_to_eval, 
+                                   "\n\n", descr)
+  ind_eval_titlepage     <- paste0("Individual fits \n\n Run", model_to_eval, 
+                                   "\n\n", descr)
+  
+  # -----------------------
+  #  Run summary
+  # -----------------------
+  summary(run_db)
+  
+  # -----------------------
+  #  Parameter summary
+  # -----------------------
+  prm_table(run_db)
+  
+  # # Or if you prefer the sumo output:
+  # system_cmd(paste0('sumo run', model_to_eval,".lst"), 
+  #            dir=base_model_dir)
+  
+  # -----------------------
+  #  Graphical evaluation
+  # -----------------------
+  # Extract data and create sub datasets
+  tab <- run_db$data$data[[1]]
+  # Extract which etas to plot
+  etas <- names(tab)[(str_detect(names(tab), "ETA.*"))]
+  
+  # R settings for dataset
+  tab <- r_data_structure(tab, # requires data.frame
+                          data_spec = file.path(source_data_dir, dataspec_filename),
+                          nm_output = T)
+  tab <- add_variables(tab)
+  
+  nm_conc_data <- tab %>% filter(EVID==0)
+  nm_baseline <- nm_conc_data %>% filter(!duplicated(NMSEQSID))
+  
+  # ------ 1. GOF pooled data ----------
+  model_evaluation <-
+    list(gg_title_plot(eval_titlepage))
+  
+  model_evaluation$basic_gof <- 
+    arrangeGrob( # grid.arrange(
+      gg_obs_vs_pred(nm_conc_data, y=DV, x=PRED), 
+      gg_obs_vs_pred(nm_conc_data, y=DV, x=IPRED), 
+      gg_residuals(nm_conc_data, y=IWRESI, x=TIME, absolute=T), 
+      gg_residuals(nm_conc_data, y=CWRES, x=PRED), 
+      nrow=2)
+  
+  model_evaluation$cwres <- 
+    arrangeGrob( # grid.arrange(
+      gg_residuals(nm_conc_data, y=CWRES, x=TIME), 
+      gg_residuals(nm_conc_data, y=CWRES, x=TAPD), 
+      gg_residuals(nm_conc_data, y=CWRES, x=PRED), 
+      gg_qq_plot(nm_conc_data, sample=CWRES),
+      nrow=2)
+  
+  model_evaluation$npde <- 
+    arrangeGrob( # grid.arrange(
+      gg_residuals(nm_conc_data, y=NPDE, x=TIME), 
+      gg_residuals(nm_conc_data, y=NPDE, x=TAPD), 
+      gg_residuals(nm_conc_data, y=NPDE, x=PRED), 
+      gg_qq_plot(nm_conc_data, sample=NPDE),
+      nrow=2)
+  
+  # Print
+  invisible(lapply(model_evaluation, grob_draw))
+  
+  ## ------ 2. Distribution of individual parameters ----------
+  model_evaluation$ind_parms <- 
+    ggpairs(nm_baseline, columns = etas, 
+            diag = list(continuous = "barDiag", na.rm=T), 
+            upper = list(continuous = "blank"), 
+            lower = list(continuous = ally_scatter_lm_cor))
+  
+  ## ------ 3. Individual fits ----------
+  # Takes time to print, comment out the ones you don't need
+  ind_nm_data_split <-
+    nm_conc_data %>% 
+    # OCC column needs to be factor for individual graphics
+    mutate(OCC = factor(OCC, levels = sort(unique(OCC)))) %>% 
+    ind_data_split(id="NMSEQSID")
+  
+  individual_fits <-
+    list(gg_title_plot(ind_eval_titlepage))
+  
+  # TAPD
+  individual_fits$t1 <- 
+    gg_title_plot("Concentrations versus Time after dose")
+  
+  p <- vector("list",length(ind_nm_data_split))
+  for(i in 1:length(ind_nm_data_split)){
+    p[[i]] <- 
+      gg_conc_time_ind(ind_nm_data_split[[i]],
+                       x=TAPD, id=NMSEQSID, occ=OCC, 
+                       facet_scales = NULL) + 
+      labs(y=labs_conc, x=labs_TAPD)
+  }
+  individual_fits <- c(individual_fits, p)
+  
+  # TAD log Y
+  individual_fits$t2 <- 
+    gg_title_plot("Concentrations versus Time after dose \n\n Log y")
+  
+  p <- vector("list",length(ind_nm_data_split))
+  for(i in 1:length(ind_nm_data_split)){
+    p[[i]] <- 
+      gg_conc_time_ind(ind_nm_data_split[[i]],
+                       x=TAPD, id=NMSEQSID, occ=OCC, 
+                       facet_scales = NULL) + 
+      scale_y_log10() + 
+      labs(y=labs_conc, x=labs_TAPD)
+  }
+  individual_fits <- c(individual_fits, p)
+  
+  # TIME
+  individual_fits$t3 <- gg_title_plot("Concentrations versus Time")
+  
+  p <- vector("list",length(ind_nm_data_split))
+  for(i in 1:length(ind_nm_data_split)){
+    p[[i]] <- 
+      gg_conc_time_ind(ind_nm_data_split[[i]],
+                       x=TIME, id=NMSEQSID, occ=OCC) + 
+      labs(y=labs_conc, x=labs_TAFD)
+  }
+  individual_fits <- c(individual_fits, p)
+  
+  # TIME log Y
+  individual_fits$t4 <- 
+    gg_title_plot("Concentrations versus Time \n\n Log y")
+  
+  p <- vector("list",length(ind_nm_data_split))
+  for(i in 1:length(ind_nm_data_split)){
+    p[[i]] <- 
+      gg_conc_time_ind(ind_nm_data_split[[i]],
+                       x=TIME, id=NMSEQSID, occ=OCC) +
+      scale_y_log10() + 
+      labs(y=labs_conc, x=labs_TAFD)
+  }
+  individual_fits <- c(individual_fits, p)
+  
+  # Print
+  invisible(lapply(individual_fits, grob_draw))
+  
+  if(params$print_results){
+    # Print to file
+    pdf(file = graphics_filepath, height=8.5, width=11)
+    invisible(lapply(model_evaluation, grob_draw))
+    dev.off()
+    
+    pdf(file=ind_graphics_filepath, height=8.5, width=11)
+    invisible(lapply(individual_fits, grob_draw))
+    dev.off()
+  }
+}
+```
+
+#  Run004
+
+```{r, run004}
+model_to_eval <- "004"
+
+if(model_to_eval=="004"){
+  
+  # -----------------------
+  #  Read in output files
+  # -----------------------
+  run_db <- xpose_data(runno = model_to_eval, 
+                       dir = base_model_dir)
+  # Extract run description
+  descr <- run_db$summary$value[run_db$summary$label=="descr"]
+  
+  # -----------------------
+  #  Define output file names and title pages
+  # -----------------------
+  graphics_filepath      <- file.path(res_base_model_dir, 
+                                      paste0("evaluation_run", model_to_eval,".pdf"))
+  ind_graphics_filepath  <- file.path(res_base_model_dir, 
+                                      paste0("individual_fits_run", model_to_eval,".pdf"))
+  
+  eval_titlepage         <- paste0("Goodness-of-fit plots \n\n Run", model_to_eval, 
+                                   "\n\n", descr)
+  ind_eval_titlepage     <- paste0("Individual fits \n\n Run", model_to_eval, 
+                                   "\n\n", descr)
+  
+  # -----------------------
+  #  Run summary
+  # -----------------------
+  summary(run_db)
+  
+  # -----------------------
+  #  Parameter summary
+  # -----------------------
+  prm_table(run_db)
+  
+  # # Or if you prefer the sumo output:
+  # system_cmd(paste0('sumo run', model_to_eval,".lst"), 
+  #            dir=base_model_dir)
+  
+  # -----------------------
+  #  Graphical evaluation
+  # -----------------------
+  # Extract data and create sub datasets
+  tab <- run_db$data$data[[1]]
+  # Extract which etas to plot
+  etas <- names(tab)[(str_detect(names(tab), "ETA.*"))]
+  
+  # R settings for dataset
+  tab <- r_data_structure(tab, # requires data.frame
+                          data_spec = file.path(source_data_dir, dataspec_filename),
+                          nm_output = T)
+  tab <- add_variables(tab)
+  
+  nm_conc_data <- tab %>% filter(EVID==0)
+  nm_baseline <- nm_conc_data %>% filter(!duplicated(NMSEQSID))
+  
+  # ------ 1. GOF pooled data ----------
+  model_evaluation <-
+    list(gg_title_plot(eval_titlepage))
+  
+  model_evaluation$basic_gof <- 
+    arrangeGrob( # grid.arrange(
+      gg_obs_vs_pred(nm_conc_data, y=DV, x=PRED), 
+      gg_obs_vs_pred(nm_conc_data, y=DV, x=IPRED), 
+      gg_residuals(nm_conc_data, y=IWRESI, x=TIME, absolute=T), 
+      gg_residuals(nm_conc_data, y=CWRES, x=PRED), 
+      nrow=2)
+  
+  model_evaluation$cwres <- 
+    arrangeGrob( # grid.arrange(
+      gg_residuals(nm_conc_data, y=CWRES, x=TIME), 
+      gg_residuals(nm_conc_data, y=CWRES, x=TAPD), 
+      gg_residuals(nm_conc_data, y=CWRES, x=PRED), 
+      gg_qq_plot(nm_conc_data, sample=CWRES),
+      nrow=2)
+  
+  model_evaluation$npde <- 
+    arrangeGrob( # grid.arrange(
+      gg_residuals(nm_conc_data, y=NPDE, x=TIME), 
+      gg_residuals(nm_conc_data, y=NPDE, x=TAPD), 
+      gg_residuals(nm_conc_data, y=NPDE, x=PRED), 
+      gg_qq_plot(nm_conc_data, sample=NPDE),
+      nrow=2)
+  
+  # Print
+  invisible(lapply(model_evaluation, grob_draw))
+  
+  ## ------ 2. Distribution of individual parameters ----------
+  model_evaluation$ind_parms <- 
+    ggpairs(nm_baseline, columns = etas, 
+            diag = list(continuous = "barDiag", na.rm=T), 
+            upper = list(continuous = "blank"), 
+            lower = list(continuous = ally_scatter_lm_cor))
+  
+  ## ------ 3. Individual fits ----------
+  # Takes time to print, comment out the ones you don't need
+  ind_nm_data_split <-
+    nm_conc_data %>% 
+    # OCC column needs to be factor for individual graphics
+    mutate(OCC = factor(OCC, levels = sort(unique(OCC)))) %>% 
+    ind_data_split(id="NMSEQSID")
+  
+  individual_fits <-
+    list(gg_title_plot(ind_eval_titlepage))
+  
+  # TAPD
+  individual_fits$t1 <- 
+    gg_title_plot("Concentrations versus Time after dose")
+  
+  p <- vector("list",length(ind_nm_data_split))
+  for(i in 1:length(ind_nm_data_split)){
+    p[[i]] <- 
+      gg_conc_time_ind(ind_nm_data_split[[i]],
+                       x=TAPD, id=NMSEQSID, occ=OCC, 
+                       facet_scales = NULL) + 
+      labs(y=labs_conc, x=labs_TAPD)
+  }
+  individual_fits <- c(individual_fits, p)
+  
+  # TAD log Y
+  individual_fits$t2 <- 
+    gg_title_plot("Concentrations versus Time after dose \n\n Log y")
+  
+  p <- vector("list",length(ind_nm_data_split))
+  for(i in 1:length(ind_nm_data_split)){
+    p[[i]] <- 
+      gg_conc_time_ind(ind_nm_data_split[[i]],
+                       x=TAPD, id=NMSEQSID, occ=OCC, 
+                       facet_scales = NULL) + 
+      scale_y_log10() + 
+      labs(y=labs_conc, x=labs_TAPD)
+  }
+  individual_fits <- c(individual_fits, p)
+  
+  # TIME
+  individual_fits$t3 <- gg_title_plot("Concentrations versus Time")
+  
+  p <- vector("list",length(ind_nm_data_split))
+  for(i in 1:length(ind_nm_data_split)){
+    p[[i]] <- 
+      gg_conc_time_ind(ind_nm_data_split[[i]],
+                       x=TIME, id=NMSEQSID, occ=OCC) + 
+      labs(y=labs_conc, x=labs_TAFD)
+  }
+  individual_fits <- c(individual_fits, p)
+  
+  # TIME log Y
+  individual_fits$t4 <- 
+    gg_title_plot("Concentrations versus Time \n\n Log y")
+  
+  p <- vector("list",length(ind_nm_data_split))
+  for(i in 1:length(ind_nm_data_split)){
+    p[[i]] <- 
+      gg_conc_time_ind(ind_nm_data_split[[i]],
+                       x=TIME, id=NMSEQSID, occ=OCC) +
+      scale_y_log10() + 
+      labs(y=labs_conc, x=labs_TAFD)
+  }
+  individual_fits <- c(individual_fits, p)
+  
+  # Print
+  invisible(lapply(individual_fits, grob_draw))
+  
+  if(params$print_results){
+    # Print to file
+    pdf(file = graphics_filepath, height=8.5, width=11)
+    invisible(lapply(model_evaluation, grob_draw))
+    dev.off()
+    
+    pdf(file=ind_graphics_filepath, height=8.5, width=11)
+    invisible(lapply(individual_fits, grob_draw))
+    dev.off()
+  }
+}
+```
+
+#  Run005
+
+```{r, run005}
+model_to_eval <- "005"
+
+if(model_to_eval=="005"){
+  
+  # -----------------------
+  #  Read in output files
+  # -----------------------
+  run_db <- xpose_data(runno = model_to_eval, 
+                       dir = base_model_dir)
+  # Extract run description
+  descr <- run_db$summary$value[run_db$summary$label=="descr"]
+  
+  # -----------------------
+  #  Define output file names and title pages
+  # -----------------------
+  graphics_filepath      <- file.path(res_base_model_dir, 
+                                      paste0("evaluation_run", model_to_eval,".pdf"))
+  ind_graphics_filepath  <- file.path(res_base_model_dir, 
+                                      paste0("individual_fits_run", model_to_eval,".pdf"))
+  
+  eval_titlepage         <- paste0("Goodness-of-fit plots \n\n Run", model_to_eval, 
+                                   "\n\n", descr)
+  ind_eval_titlepage     <- paste0("Individual fits \n\n Run", model_to_eval, 
+                                   "\n\n", descr)
+  
+  # -----------------------
+  #  Run summary
+  # -----------------------
+  summary(run_db)
+  
+  # -----------------------
+  #  Parameter summary
+  # -----------------------
+  prm_table(run_db)
+  
+  # # Or if you prefer the sumo output:
+  # system_cmd(paste0('sumo run', model_to_eval,".lst"), 
+  #            dir=base_model_dir)
+  
+  # -----------------------
+  #  Graphical evaluation
+  # -----------------------
+  # Extract data and create sub datasets
+  tab <- run_db$data$data[[1]]
+  # Extract which etas to plot
+  etas <- names(tab)[(str_detect(names(tab), "ETA.*"))]
+  
+  # R settings for dataset
+  tab <- r_data_structure(tab, # requires data.frame
+                          data_spec = file.path(source_data_dir, dataspec_filename),
+                          nm_output = T)
+  tab <- add_variables(tab)
+  
+  nm_conc_data <- tab %>% filter(EVID==0)
+  nm_baseline <- nm_conc_data %>% filter(!duplicated(NMSEQSID))
+  
+  # ------ 1. GOF pooled data ----------
+  model_evaluation <-
+    list(gg_title_plot(eval_titlepage))
+  
+  model_evaluation$basic_gof <- 
+    arrangeGrob( # grid.arrange(
+      gg_obs_vs_pred(nm_conc_data, y=DV, x=PRED), 
+      gg_obs_vs_pred(nm_conc_data, y=DV, x=IPRED), 
+      gg_residuals(nm_conc_data, y=IWRESI, x=TIME, absolute=T), 
+      gg_residuals(nm_conc_data, y=CWRES, x=PRED), 
+      nrow=2)
+  
+  model_evaluation$cwres <- 
+    arrangeGrob( # grid.arrange(
+      gg_residuals(nm_conc_data, y=CWRES, x=TIME), 
+      gg_residuals(nm_conc_data, y=CWRES, x=TAPD), 
+      gg_residuals(nm_conc_data, y=CWRES, x=PRED), 
+      gg_qq_plot(nm_conc_data, sample=CWRES),
+      nrow=2)
+  
+  model_evaluation$npde <- 
+    arrangeGrob( # grid.arrange(
+      gg_residuals(nm_conc_data, y=NPDE, x=TIME), 
+      gg_residuals(nm_conc_data, y=NPDE, x=TAPD), 
+      gg_residuals(nm_conc_data, y=NPDE, x=PRED), 
+      gg_qq_plot(nm_conc_data, sample=NPDE),
+      nrow=2)
+  
+  # Print
+  invisible(lapply(model_evaluation, grob_draw))
+  
+  ## ------ 2. Distribution of individual parameters ----------
+  model_evaluation$ind_parms <- 
+    ggpairs(nm_baseline, columns = etas, 
+            diag = list(continuous = "barDiag", na.rm=T), 
+            upper = list(continuous = "blank"), 
+            lower = list(continuous = ally_scatter_lm_cor))
+  
+  ## ------ 3. Individual fits ----------
+  # Takes time to print, comment out the ones you don't need
+  ind_nm_data_split <-
+    nm_conc_data %>% 
+    # OCC column needs to be factor for individual graphics
+    mutate(OCC = factor(OCC, levels = sort(unique(OCC)))) %>% 
+    ind_data_split(id="NMSEQSID")
+  
+  individual_fits <-
+    list(gg_title_plot(ind_eval_titlepage))
+  
+  # TAPD
+  individual_fits$t1 <- 
+    gg_title_plot("Concentrations versus Time after dose")
+  
+  p <- vector("list",length(ind_nm_data_split))
+  for(i in 1:length(ind_nm_data_split)){
+    p[[i]] <- 
+      gg_conc_time_ind(ind_nm_data_split[[i]],
+                       x=TAPD, id=NMSEQSID, occ=OCC, 
+                       facet_scales = NULL) + 
+      labs(y=labs_conc, x=labs_TAPD)
+  }
+  individual_fits <- c(individual_fits, p)
+  
+  # TAD log Y
+  individual_fits$t2 <- 
+    gg_title_plot("Concentrations versus Time after dose \n\n Log y")
+  
+  p <- vector("list",length(ind_nm_data_split))
+  for(i in 1:length(ind_nm_data_split)){
+    p[[i]] <- 
+      gg_conc_time_ind(ind_nm_data_split[[i]],
+                       x=TAPD, id=NMSEQSID, occ=OCC, 
+                       facet_scales = NULL) + 
+      scale_y_log10() + 
+      labs(y=labs_conc, x=labs_TAPD)
+  }
+  individual_fits <- c(individual_fits, p)
+  
+  # TIME
+  individual_fits$t3 <- gg_title_plot("Concentrations versus Time")
+  
+  p <- vector("list",length(ind_nm_data_split))
+  for(i in 1:length(ind_nm_data_split)){
+    p[[i]] <- 
+      gg_conc_time_ind(ind_nm_data_split[[i]],
+                       x=TIME, id=NMSEQSID, occ=OCC) + 
+      labs(y=labs_conc, x=labs_TAFD)
+  }
+  individual_fits <- c(individual_fits, p)
+  
+  # TIME log Y
+  individual_fits$t4 <- 
+    gg_title_plot("Concentrations versus Time \n\n Log y")
+  
+  p <- vector("list",length(ind_nm_data_split))
+  for(i in 1:length(ind_nm_data_split)){
+    p[[i]] <- 
+      gg_conc_time_ind(ind_nm_data_split[[i]],
+                       x=TIME, id=NMSEQSID, occ=OCC) +
+      scale_y_log10() + 
+      labs(y=labs_conc, x=labs_TAFD)
+  }
+  individual_fits <- c(individual_fits, p)
+  
+  # Print
+  invisible(lapply(individual_fits, grob_draw))
+  
+  if(params$print_results){
+    # Print to file
+    pdf(file = graphics_filepath, height=8.5, width=11)
+    invisible(lapply(model_evaluation, grob_draw))
+    dev.off()
+    
+    pdf(file=ind_graphics_filepath, height=8.5, width=11)
+    invisible(lapply(individual_fits, grob_draw))
+    dev.off()
+  }
+}
+```
+
+#  Run006
+
+```{r, run006}
+model_to_eval <- "006"
+
+if(model_to_eval=="006"){
+  
+  # -----------------------
+  #  Read in output files
+  # -----------------------
+  run_db <- xpose_data(runno = model_to_eval, 
+                       dir = base_model_dir)
+  # Extract run description
+  descr <- run_db$summary$value[run_db$summary$label=="descr"]
+  
+  # -----------------------
+  #  Define output file names and title pages
+  # -----------------------
+  graphics_filepath      <- file.path(res_base_model_dir, 
+                                      paste0("evaluation_run", model_to_eval,".pdf"))
+  ind_graphics_filepath  <- file.path(res_base_model_dir, 
+                                      paste0("individual_fits_run", model_to_eval,".pdf"))
+  
+  eval_titlepage         <- paste0("Goodness-of-fit plots \n\n Run", model_to_eval, 
+                                   "\n\n", descr)
+  ind_eval_titlepage     <- paste0("Individual fits \n\n Run", model_to_eval, 
+                                   "\n\n", descr)
+  
+  # -----------------------
+  #  Run summary
+  # -----------------------
+  summary(run_db)
+  
+  # -----------------------
+  #  Parameter summary
+  # -----------------------
+  prm_table(run_db)
+  
+  # # Or if you prefer the sumo output:
+  # system_cmd(paste0('sumo run', model_to_eval,".lst"), 
+  #            dir=base_model_dir)
+  
+  # -----------------------
+  #  Graphical evaluation
+  # -----------------------
+  # Extract data and create sub datasets
+  tab <- run_db$data$data[[1]]
+  # Extract which etas to plot
+  etas <- names(tab)[(str_detect(names(tab), "ETA.*"))]
+  
+  # R settings for dataset
+  tab <- r_data_structure(tab, # requires data.frame
+                          data_spec = file.path(source_data_dir, dataspec_filename),
+                          nm_output = T)
+  tab <- add_variables(tab)
+  
+  nm_conc_data <- tab %>% filter(EVID==0)
+  nm_baseline <- nm_conc_data %>% filter(!duplicated(NMSEQSID))
+  
+  # ------ 1. GOF pooled data ----------
+  model_evaluation <-
+    list(gg_title_plot(eval_titlepage))
+  
+  model_evaluation$basic_gof <- 
+    arrangeGrob( # grid.arrange(
+      gg_obs_vs_pred(nm_conc_data, y=DV, x=PRED), 
+      gg_obs_vs_pred(nm_conc_data, y=DV, x=IPRED), 
+      gg_residuals(nm_conc_data, y=IWRESI, x=TIME, absolute=T), 
+      gg_residuals(nm_conc_data, y=CWRES, x=PRED), 
+      nrow=2)
+  
+  model_evaluation$cwres <- 
+    arrangeGrob( # grid.arrange(
+      gg_residuals(nm_conc_data, y=CWRES, x=TIME), 
+      gg_residuals(nm_conc_data, y=CWRES, x=TAPD), 
+      gg_residuals(nm_conc_data, y=CWRES, x=PRED), 
+      gg_qq_plot(nm_conc_data, sample=CWRES),
+      nrow=2)
+  
+  model_evaluation$npde <- 
+    arrangeGrob( # grid.arrange(
+      gg_residuals(nm_conc_data, y=NPDE, x=TIME), 
+      gg_residuals(nm_conc_data, y=NPDE, x=TAPD), 
+      gg_residuals(nm_conc_data, y=NPDE, x=PRED), 
+      gg_qq_plot(nm_conc_data, sample=NPDE),
+      nrow=2)
+  
+  # Print
+  invisible(lapply(model_evaluation, grob_draw))
+  
+  ## ------ 2. Distribution of individual parameters ----------
+  model_evaluation$ind_parms <- 
+    ggpairs(nm_baseline, columns = etas, 
+            diag = list(continuous = "barDiag", na.rm=T), 
+            upper = list(continuous = "blank"), 
+            lower = list(continuous = ally_scatter_lm_cor))
+  
+  ## ------ 3. Individual fits ----------
+  # Takes time to print, comment out the ones you don't need
+  ind_nm_data_split <-
+    nm_conc_data %>% 
+    # OCC column needs to be factor for individual graphics
+    mutate(OCC = factor(OCC, levels = sort(unique(OCC)))) %>% 
+    ind_data_split(id="NMSEQSID")
+  
+  individual_fits <-
+    list(gg_title_plot(ind_eval_titlepage))
+  
+  # TAPD
+  individual_fits$t1 <- 
+    gg_title_plot("Concentrations versus Time after dose")
+  
+  p <- vector("list",length(ind_nm_data_split))
+  for(i in 1:length(ind_nm_data_split)){
+    p[[i]] <- 
+      gg_conc_time_ind(ind_nm_data_split[[i]],
+                       x=TAPD, id=NMSEQSID, occ=OCC, 
+                       facet_scales = NULL) + 
+      labs(y=labs_conc, x=labs_TAPD)
+  }
+  individual_fits <- c(individual_fits, p)
+  
+  # TAD log Y
+  individual_fits$t2 <- 
+    gg_title_plot("Concentrations versus Time after dose \n\n Log y")
+  
+  p <- vector("list",length(ind_nm_data_split))
+  for(i in 1:length(ind_nm_data_split)){
+    p[[i]] <- 
+      gg_conc_time_ind(ind_nm_data_split[[i]],
+                       x=TAPD, id=NMSEQSID, occ=OCC, 
+                       facet_scales = NULL) + 
+      scale_y_log10() + 
+      labs(y=labs_conc, x=labs_TAPD)
+  }
+  individual_fits <- c(individual_fits, p)
+  
+  # TIME
+  individual_fits$t3 <- gg_title_plot("Concentrations versus Time")
+  
+  p <- vector("list",length(ind_nm_data_split))
+  for(i in 1:length(ind_nm_data_split)){
+    p[[i]] <- 
+      gg_conc_time_ind(ind_nm_data_split[[i]],
+                       x=TIME, id=NMSEQSID, occ=OCC) + 
+      labs(y=labs_conc, x=labs_TAFD)
+  }
+  individual_fits <- c(individual_fits, p)
+  
+  # TIME log Y
+  individual_fits$t4 <- 
+    gg_title_plot("Concentrations versus Time \n\n Log y")
+  
+  p <- vector("list",length(ind_nm_data_split))
+  for(i in 1:length(ind_nm_data_split)){
+    p[[i]] <- 
+      gg_conc_time_ind(ind_nm_data_split[[i]],
+                       x=TIME, id=NMSEQSID, occ=OCC) +
+      scale_y_log10() + 
+      labs(y=labs_conc, x=labs_TAFD)
+  }
+  individual_fits <- c(individual_fits, p)
+  
+  # Print
+  invisible(lapply(individual_fits, grob_draw))
+  
+  if(params$print_results){
+    # Print to file
+    pdf(file = graphics_filepath, height=8.5, width=11)
+    invisible(lapply(model_evaluation, grob_draw))
+    dev.off()
+    
+    pdf(file=ind_graphics_filepath, height=8.5, width=11)
+    invisible(lapply(individual_fits, grob_draw))
+    dev.off()
+  }
+}
+```
+
+#  Run007
+
+```{r, run007}
+model_to_eval <- "007"
+
+if(model_to_eval=="007"){
+  
+  # -----------------------
+  #  Read in output files
+  # -----------------------
+  run_db <- xpose_data(runno = model_to_eval, 
+                       dir = base_model_dir)
+  # Extract run description
+  descr <- run_db$summary$value[run_db$summary$label=="descr"]
+  
+  # -----------------------
+  #  Define output file names and title pages
+  # -----------------------
+  graphics_filepath      <- file.path(res_base_model_dir, 
+                                      paste0("evaluation_run", model_to_eval,".pdf"))
+  ind_graphics_filepath  <- file.path(res_base_model_dir, 
+                                      paste0("individual_fits_run", model_to_eval,".pdf"))
+  
+  eval_titlepage         <- paste0("Goodness-of-fit plots \n\n Run", model_to_eval, 
+                                   "\n\n", descr)
+  ind_eval_titlepage     <- paste0("Individual fits \n\n Run", model_to_eval, 
+                                   "\n\n", descr)
+  
+  # -----------------------
+  #  Run summary
+  # -----------------------
+  summary(run_db)
+  
+  # -----------------------
+  #  Parameter summary
+  # -----------------------
+  prm_table(run_db)
+  
+  # # Or if you prefer the sumo output:
+  # system_cmd(paste0('sumo run', model_to_eval,".lst"), 
+  #            dir=base_model_dir)
+  
+  # -----------------------
+  #  Graphical evaluation
+  # -----------------------
+  # Extract data and create sub datasets
+  tab <- run_db$data$data[[1]]
+  # Extract which etas to plot
+  etas <- names(tab)[(str_detect(names(tab), "ETA.*"))]
+  
+  # R settings for dataset
+  tab <- r_data_structure(tab, # requires data.frame
+                          data_spec = file.path(source_data_dir, dataspec_filename),
+                          nm_output = T)
+  tab <- add_variables(tab)
+  
+  nm_conc_data <- tab %>% filter(EVID==0)
+  nm_baseline <- nm_conc_data %>% filter(!duplicated(NMSEQSID))
+  
+  # ------ 1. GOF pooled data ----------
+  model_evaluation <-
+    list(gg_title_plot(eval_titlepage))
+  
+  model_evaluation$basic_gof <- 
+    arrangeGrob( # grid.arrange(
+      gg_obs_vs_pred(nm_conc_data, y=DV, x=PRED), 
+      gg_obs_vs_pred(nm_conc_data, y=DV, x=IPRED), 
+      gg_residuals(nm_conc_data, y=IWRESI, x=TIME, absolute=T), 
+      gg_residuals(nm_conc_data, y=CWRES, x=PRED), 
+      nrow=2)
+  
+  model_evaluation$cwres <- 
+    arrangeGrob( # grid.arrange(
+      gg_residuals(nm_conc_data, y=CWRES, x=TIME), 
+      gg_residuals(nm_conc_data, y=CWRES, x=TAPD), 
+      gg_residuals(nm_conc_data, y=CWRES, x=PRED), 
+      gg_qq_plot(nm_conc_data, sample=CWRES),
+      nrow=2)
+  
+  model_evaluation$npde <- 
+    arrangeGrob( # grid.arrange(
+      gg_residuals(nm_conc_data, y=NPDE, x=TIME), 
+      gg_residuals(nm_conc_data, y=NPDE, x=TAPD), 
+      gg_residuals(nm_conc_data, y=NPDE, x=PRED), 
+      gg_qq_plot(nm_conc_data, sample=NPDE),
+      nrow=2)
+  
+  # Print
+  invisible(lapply(model_evaluation, grob_draw))
+  
+  ## ------ 2. Distribution of individual parameters ----------
+  model_evaluation$ind_parms <- 
+    ggpairs(nm_baseline, columns = etas, 
+            diag = list(continuous = "barDiag", na.rm=T), 
+            upper = list(continuous = "blank"), 
+            lower = list(continuous = ally_scatter_lm_cor))
+  
+  ## ------ 3. Individual fits ----------
+  # Takes time to print, comment out the ones you don't need
+  ind_nm_data_split <-
+    nm_conc_data %>% 
+    # OCC column needs to be factor for individual graphics
+    mutate(OCC = factor(OCC, levels = sort(unique(OCC)))) %>% 
+    ind_data_split(id="NMSEQSID")
+  
+  individual_fits <-
+    list(gg_title_plot(ind_eval_titlepage))
+  
+  # TAPD
+  individual_fits$t1 <- 
+    gg_title_plot("Concentrations versus Time after dose")
+  
+  p <- vector("list",length(ind_nm_data_split))
+  for(i in 1:length(ind_nm_data_split)){
+    p[[i]] <- 
+      gg_conc_time_ind(ind_nm_data_split[[i]],
+                       x=TAPD, id=NMSEQSID, occ=OCC, 
+                       facet_scales = NULL) + 
+      labs(y=labs_conc, x=labs_TAPD)
+  }
+  individual_fits <- c(individual_fits, p)
+  
+  # TAD log Y
+  individual_fits$t2 <- 
+    gg_title_plot("Concentrations versus Time after dose \n\n Log y")
+  
+  p <- vector("list",length(ind_nm_data_split))
+  for(i in 1:length(ind_nm_data_split)){
+    p[[i]] <- 
+      gg_conc_time_ind(ind_nm_data_split[[i]],
+                       x=TAPD, id=NMSEQSID, occ=OCC, 
+                       facet_scales = NULL) + 
+      scale_y_log10() + 
+      labs(y=labs_conc, x=labs_TAPD)
+  }
+  individual_fits <- c(individual_fits, p)
+  
+  # TIME
+  individual_fits$t3 <- gg_title_plot("Concentrations versus Time")
+  
+  p <- vector("list",length(ind_nm_data_split))
+  for(i in 1:length(ind_nm_data_split)){
+    p[[i]] <- 
+      gg_conc_time_ind(ind_nm_data_split[[i]],
+                       x=TIME, id=NMSEQSID, occ=OCC) + 
+      labs(y=labs_conc, x=labs_TAFD)
+  }
+  individual_fits <- c(individual_fits, p)
+  
+  # TIME log Y
+  individual_fits$t4 <- 
+    gg_title_plot("Concentrations versus Time \n\n Log y")
+  
+  p <- vector("list",length(ind_nm_data_split))
+  for(i in 1:length(ind_nm_data_split)){
+    p[[i]] <- 
+      gg_conc_time_ind(ind_nm_data_split[[i]],
+                       x=TIME, id=NMSEQSID, occ=OCC) +
+      scale_y_log10() + 
+      labs(y=labs_conc, x=labs_TAFD)
+  }
+  individual_fits <- c(individual_fits, p)
+  
+  # Print
+  invisible(lapply(individual_fits, grob_draw))
+  
+  if(params$print_results){
+    # Print to file
+    pdf(file = graphics_filepath, height=8.5, width=11)
+    invisible(lapply(model_evaluation, grob_draw))
+    dev.off()
+    
+    pdf(file=ind_graphics_filepath, height=8.5, width=11)
+    invisible(lapply(individual_fits, grob_draw))
+    dev.off()
+  }
+}
+```
+
+#  Run008
+
+```{r, run008}
+model_to_eval <- "008"
+
+if(model_to_eval=="008"){
+  
+  # -----------------------
+  #  Read in output files
+  # -----------------------
+  run_db <- xpose_data(runno = model_to_eval, 
+                       dir = base_model_dir)
+  # Extract run description
+  descr <- run_db$summary$value[run_db$summary$label=="descr"]
+  
+  # -----------------------
+  #  Define output file names and title pages
+  # -----------------------
+  graphics_filepath      <- file.path(res_base_model_dir, 
+                                      paste0("evaluation_run", model_to_eval,".pdf"))
+  ind_graphics_filepath  <- file.path(res_base_model_dir, 
+                                      paste0("individual_fits_run", model_to_eval,".pdf"))
+  
+  eval_titlepage         <- paste0("Goodness-of-fit plots \n\n Run", model_to_eval, 
+                                   "\n\n", descr)
+  ind_eval_titlepage     <- paste0("Individual fits \n\n Run", model_to_eval, 
+                                   "\n\n", descr)
+  
+  # -----------------------
+  #  Run summary
+  # -----------------------
+  summary(run_db)
+  
+  # -----------------------
+  #  Parameter summary
+  # -----------------------
+  prm_table(run_db)
+  
+  # # Or if you prefer the sumo output:
+  # system_cmd(paste0('sumo run', model_to_eval,".lst"), 
+  #            dir=base_model_dir)
+  
+  # -----------------------
+  #  Graphical evaluation
+  # -----------------------
+  # Extract data and create sub datasets
+  tab <- run_db$data$data[[1]]
+  # Extract which etas to plot
+  etas <- names(tab)[(str_detect(names(tab), "ETA.*"))]
+  
+  # R settings for dataset
+  tab <- r_data_structure(tab, # requires data.frame
+                          data_spec = file.path(source_data_dir, dataspec_filename),
+                          nm_output = T)
+  tab <- add_variables(tab)
+  
+  nm_conc_data <- tab %>% filter(EVID==0)
+  nm_baseline <- nm_conc_data %>% filter(!duplicated(NMSEQSID))
+  
+  # ------ 1. GOF pooled data ----------
+  model_evaluation <-
+    list(gg_title_plot(eval_titlepage))
+  
+  model_evaluation$basic_gof <- 
+    arrangeGrob( # grid.arrange(
+      gg_obs_vs_pred(nm_conc_data, y=DV, x=PRED), 
+      gg_obs_vs_pred(nm_conc_data, y=DV, x=IPRED), 
+      gg_residuals(nm_conc_data, y=IWRESI, x=TIME, absolute=T), 
+      gg_residuals(nm_conc_data, y=CWRES, x=PRED), 
+      nrow=2)
+  
+  model_evaluation$cwres <- 
+    arrangeGrob( # grid.arrange(
+      gg_residuals(nm_conc_data, y=CWRES, x=TIME), 
+      gg_residuals(nm_conc_data, y=CWRES, x=TAPD), 
+      gg_residuals(nm_conc_data, y=CWRES, x=PRED), 
+      gg_qq_plot(nm_conc_data, sample=CWRES),
+      nrow=2)
+  
+  model_evaluation$npde <- 
+    arrangeGrob( # grid.arrange(
+      gg_residuals(nm_conc_data, y=NPDE, x=TIME), 
+      gg_residuals(nm_conc_data, y=NPDE, x=TAPD), 
+      gg_residuals(nm_conc_data, y=NPDE, x=PRED), 
+      gg_qq_plot(nm_conc_data, sample=NPDE),
+      nrow=2)
+  
+  # Print
+  invisible(lapply(model_evaluation, grob_draw))
+  
+  ## ------ 2. Distribution of individual parameters ----------
+  model_evaluation$ind_parms <- 
+    ggpairs(nm_baseline, columns = etas, 
+            diag = list(continuous = "barDiag", na.rm=T), 
+            upper = list(continuous = "blank"), 
+            lower = list(continuous = ally_scatter_lm_cor))
+  
+  ## ------ 3. Individual fits ----------
+  # Takes time to print, comment out the ones you don't need
+  ind_nm_data_split <-
+    nm_conc_data %>% 
+    # OCC column needs to be factor for individual graphics
+    mutate(OCC = factor(OCC, levels = sort(unique(OCC)))) %>% 
+    ind_data_split(id="NMSEQSID")
+  
+  individual_fits <-
+    list(gg_title_plot(ind_eval_titlepage))
+  
+  # TAPD
+  individual_fits$t1 <- 
+    gg_title_plot("Concentrations versus Time after dose")
+  
+  p <- vector("list",length(ind_nm_data_split))
+  for(i in 1:length(ind_nm_data_split)){
+    p[[i]] <- 
+      gg_conc_time_ind(ind_nm_data_split[[i]],
+                       x=TAPD, id=NMSEQSID, occ=OCC, 
+                       facet_scales = NULL) + 
+      labs(y=labs_conc, x=labs_TAPD)
+  }
+  individual_fits <- c(individual_fits, p)
+  
+  # TAD log Y
+  individual_fits$t2 <- 
+    gg_title_plot("Concentrations versus Time after dose \n\n Log y")
+  
+  p <- vector("list",length(ind_nm_data_split))
+  for(i in 1:length(ind_nm_data_split)){
+    p[[i]] <- 
+      gg_conc_time_ind(ind_nm_data_split[[i]],
+                       x=TAPD, id=NMSEQSID, occ=OCC, 
+                       facet_scales = NULL) + 
+      scale_y_log10() + 
+      labs(y=labs_conc, x=labs_TAPD)
+  }
+  individual_fits <- c(individual_fits, p)
+  
+  # TIME
+  individual_fits$t3 <- gg_title_plot("Concentrations versus Time")
+  
+  p <- vector("list",length(ind_nm_data_split))
+  for(i in 1:length(ind_nm_data_split)){
+    p[[i]] <- 
+      gg_conc_time_ind(ind_nm_data_split[[i]],
+                       x=TIME, id=NMSEQSID, occ=OCC) + 
+      labs(y=labs_conc, x=labs_TAFD)
+  }
+  individual_fits <- c(individual_fits, p)
+  
+  # TIME log Y
+  individual_fits$t4 <- 
+    gg_title_plot("Concentrations versus Time \n\n Log y")
+  
+  p <- vector("list",length(ind_nm_data_split))
+  for(i in 1:length(ind_nm_data_split)){
+    p[[i]] <- 
+      gg_conc_time_ind(ind_nm_data_split[[i]],
+                       x=TIME, id=NMSEQSID, occ=OCC) +
+      scale_y_log10() + 
+      labs(y=labs_conc, x=labs_TAFD)
+  }
+  individual_fits <- c(individual_fits, p)
+  
+  # Print
+  invisible(lapply(individual_fits, grob_draw))
+  
+  if(params$print_results){
+    # Print to file
+    pdf(file = graphics_filepath, height=8.5, width=11)
+    invisible(lapply(model_evaluation, grob_draw))
+    dev.off()
+    
+    pdf(file=ind_graphics_filepath, height=8.5, width=11)
+    invisible(lapply(individual_fits, grob_draw))
+    dev.off()
+  }
+}
+```
+
+#  Run009
+
+```{r, run009}
+model_to_eval <- "009"
+
+if(model_to_eval=="009"){
+  
+  # -----------------------
+  #  Read in output files
+  # -----------------------
+  run_db <- xpose_data(runno = model_to_eval, 
+                       dir = base_model_dir)
+  # Extract run description
+  descr <- run_db$summary$value[run_db$summary$label=="descr"]
+  
+  # -----------------------
+  #  Define output file names and title pages
+  # -----------------------
+  graphics_filepath      <- file.path(res_base_model_dir, 
+                                      paste0("evaluation_run", model_to_eval,".pdf"))
+  ind_graphics_filepath  <- file.path(res_base_model_dir, 
+                                      paste0("individual_fits_run", model_to_eval,".pdf"))
+  
+  eval_titlepage         <- paste0("Goodness-of-fit plots \n\n Run", model_to_eval, 
+                                   "\n\n", descr)
+  ind_eval_titlepage     <- paste0("Individual fits \n\n Run", model_to_eval, 
+                                   "\n\n", descr)
+  
+  # -----------------------
+  #  Run summary
+  # -----------------------
+  summary(run_db)
+  
+  # -----------------------
+  #  Parameter summary
+  # -----------------------
+  prm_table(run_db)
+  
+  # # Or if you prefer the sumo output:
+  # system_cmd(paste0('sumo run', model_to_eval,".lst"), 
+  #            dir=base_model_dir)
+  
+  # -----------------------
+  #  Graphical evaluation
+  # -----------------------
+  # Extract data and create sub datasets
+  tab <- run_db$data$data[[1]]
+  # Extract which etas to plot
+  etas <- names(tab)[(str_detect(names(tab), "ETA.*"))]
+  
+  # R settings for dataset
+  tab <- r_data_structure(tab, # requires data.frame
+                          data_spec = file.path(source_data_dir, dataspec_filename),
+                          nm_output = T)
+  tab <- add_variables(tab)
+  
+  nm_conc_data <- tab %>% filter(EVID==0)
+  nm_baseline <- nm_conc_data %>% filter(!duplicated(NMSEQSID))
+  
+  # ------ 1. GOF pooled data ----------
+  model_evaluation <-
+    list(gg_title_plot(eval_titlepage))
+  
+  model_evaluation$basic_gof <- 
+    arrangeGrob( # grid.arrange(
+      gg_obs_vs_pred(nm_conc_data, y=DV, x=PRED), 
+      gg_obs_vs_pred(nm_conc_data, y=DV, x=IPRED), 
+      gg_residuals(nm_conc_data, y=IWRESI, x=TIME, absolute=T), 
+      gg_residuals(nm_conc_data, y=CWRES, x=PRED), 
+      nrow=2)
+  
+  model_evaluation$cwres <- 
+    arrangeGrob( # grid.arrange(
+      gg_residuals(nm_conc_data, y=CWRES, x=TIME), 
+      gg_residuals(nm_conc_data, y=CWRES, x=TAPD), 
+      gg_residuals(nm_conc_data, y=CWRES, x=PRED), 
+      gg_qq_plot(nm_conc_data, sample=CWRES),
+      nrow=2)
+  
+  model_evaluation$npde <- 
+    arrangeGrob( # grid.arrange(
+      gg_residuals(nm_conc_data, y=NPDE, x=TIME), 
+      gg_residuals(nm_conc_data, y=NPDE, x=TAPD), 
+      gg_residuals(nm_conc_data, y=NPDE, x=PRED), 
+      gg_qq_plot(nm_conc_data, sample=NPDE),
+      nrow=2)
+  
+  # Print
+  invisible(lapply(model_evaluation, grob_draw))
+  
+  ## ------ 2. Distribution of individual parameters ----------
+  model_evaluation$ind_parms <- 
+    ggpairs(nm_baseline, columns = etas, 
+            diag = list(continuous = "barDiag", na.rm=T), 
+            upper = list(continuous = "blank"), 
+            lower = list(continuous = ally_scatter_lm_cor))
+  
+  ## ------ 3. Individual fits ----------
+  # Takes time to print, comment out the ones you don't need
+  ind_nm_data_split <-
+    nm_conc_data %>% 
+    # OCC column needs to be factor for individual graphics
+    mutate(OCC = factor(OCC, levels = sort(unique(OCC)))) %>% 
+    ind_data_split(id="NMSEQSID")
+  
+  individual_fits <-
+    list(gg_title_plot(ind_eval_titlepage))
+  
+  # TAPD
+  individual_fits$t1 <- 
+    gg_title_plot("Concentrations versus Time after dose")
+  
+  p <- vector("list",length(ind_nm_data_split))
+  for(i in 1:length(ind_nm_data_split)){
+    p[[i]] <- 
+      gg_conc_time_ind(ind_nm_data_split[[i]],
+                       x=TAPD, id=NMSEQSID, occ=OCC, 
+                       facet_scales = NULL) + 
+      labs(y=labs_conc, x=labs_TAPD)
+  }
+  individual_fits <- c(individual_fits, p)
+  
+  # TAD log Y
+  individual_fits$t2 <- 
+    gg_title_plot("Concentrations versus Time after dose \n\n Log y")
+  
+  p <- vector("list",length(ind_nm_data_split))
+  for(i in 1:length(ind_nm_data_split)){
+    p[[i]] <- 
+      gg_conc_time_ind(ind_nm_data_split[[i]],
+                       x=TAPD, id=NMSEQSID, occ=OCC, 
+                       facet_scales = NULL) + 
+      scale_y_log10() + 
+      labs(y=labs_conc, x=labs_TAPD)
+  }
+  individual_fits <- c(individual_fits, p)
+  
+  # TIME
+  individual_fits$t3 <- gg_title_plot("Concentrations versus Time")
+  
+  p <- vector("list",length(ind_nm_data_split))
+  for(i in 1:length(ind_nm_data_split)){
+    p[[i]] <- 
+      gg_conc_time_ind(ind_nm_data_split[[i]],
+                       x=TIME, id=NMSEQSID, occ=OCC) + 
+      labs(y=labs_conc, x=labs_TAFD)
+  }
+  individual_fits <- c(individual_fits, p)
+  
+  # TIME log Y
+  individual_fits$t4 <- 
+    gg_title_plot("Concentrations versus Time \n\n Log y")
+  
+  p <- vector("list",length(ind_nm_data_split))
+  for(i in 1:length(ind_nm_data_split)){
+    p[[i]] <- 
+      gg_conc_time_ind(ind_nm_data_split[[i]],
+                       x=TIME, id=NMSEQSID, occ=OCC) +
+      scale_y_log10() + 
+      labs(y=labs_conc, x=labs_TAFD)
+  }
+  individual_fits <- c(individual_fits, p)
+  
+  # Print
+  invisible(lapply(individual_fits, grob_draw))
+  
+  if(params$print_results){
+    # Print to file
+    pdf(file = graphics_filepath, height=8.5, width=11)
+    invisible(lapply(model_evaluation, grob_draw))
+    dev.off()
+    
+    pdf(file=ind_graphics_filepath, height=8.5, width=11)
+    invisible(lapply(individual_fits, grob_draw))
+    dev.off()
+  }
+}
+```
+
+#  Run010
+
+```{r, run010}
+model_to_eval <- "010"
+
+if(model_to_eval=="010"){
+  
+  # -----------------------
+  #  Read in output files
+  # -----------------------
+  run_db <- xpose_data(runno = model_to_eval, 
+                       dir = base_model_dir)
+  # Extract run description
+  descr <- run_db$summary$value[run_db$summary$label=="descr"]
+  
+  # -----------------------
+  #  Define output file names and title pages
+  # -----------------------
+  graphics_filepath      <- file.path(res_base_model_dir, 
+                                      paste0("evaluation_run", model_to_eval,".pdf"))
+  ind_graphics_filepath  <- file.path(res_base_model_dir, 
+                                      paste0("individual_fits_run", model_to_eval,".pdf"))
+  
+  eval_titlepage         <- paste0("Goodness-of-fit plots \n\n Run", model_to_eval, 
+                                   "\n\n", descr)
+  ind_eval_titlepage     <- paste0("Individual fits \n\n Run", model_to_eval, 
+                                   "\n\n", descr)
+  
+  # -----------------------
+  #  Run summary
+  # -----------------------
+  summary(run_db)
+  
+  # -----------------------
+  #  Parameter summary
+  # -----------------------
+  prm_table(run_db)
+  
+  # # Or if you prefer the sumo output:
+  # system_cmd(paste0('sumo run', model_to_eval,".lst"), 
+  #            dir=base_model_dir)
+  
+  # -----------------------
+  #  Graphical evaluation
+  # -----------------------
+  # Extract data and create sub datasets
+  tab <- run_db$data$data[[1]]
+  # Extract which etas to plot
+  etas <- names(tab)[(str_detect(names(tab), "ETA.*"))]
+  
+  # R settings for dataset
+  tab <- r_data_structure(tab, # requires data.frame
+                          data_spec = file.path(source_data_dir, dataspec_filename),
+                          nm_output = T)
+  tab <- add_variables(tab)
+  
+  nm_conc_data <- tab %>% filter(EVID==0)
+  nm_baseline <- nm_conc_data %>% filter(!duplicated(NMSEQSID))
+  
+  # ------ 1. GOF pooled data ----------
+  model_evaluation <-
+    list(gg_title_plot(eval_titlepage))
+  
+  model_evaluation$basic_gof <- 
+    arrangeGrob( # grid.arrange(
+      gg_obs_vs_pred(nm_conc_data, y=DV, x=PRED), 
+      gg_obs_vs_pred(nm_conc_data, y=DV, x=IPRED), 
+      gg_residuals(nm_conc_data, y=IWRESI, x=TIME, absolute=T), 
+      gg_residuals(nm_conc_data, y=CWRES, x=PRED), 
+      nrow=2)
+  
+  model_evaluation$cwres <- 
+    arrangeGrob( # grid.arrange(
+      gg_residuals(nm_conc_data, y=CWRES, x=TIME), 
+      gg_residuals(nm_conc_data, y=CWRES, x=TAPD), 
+      gg_residuals(nm_conc_data, y=CWRES, x=PRED), 
+      gg_qq_plot(nm_conc_data, sample=CWRES),
+      nrow=2)
+  
+  model_evaluation$npde <- 
+    arrangeGrob( # grid.arrange(
+      gg_residuals(nm_conc_data, y=NPDE, x=TIME), 
+      gg_residuals(nm_conc_data, y=NPDE, x=TAPD), 
+      gg_residuals(nm_conc_data, y=NPDE, x=PRED), 
+      gg_qq_plot(nm_conc_data, sample=NPDE),
+      nrow=2)
+  
+  # Print
+  invisible(lapply(model_evaluation, grob_draw))
+  
+  ## ------ 2. Distribution of individual parameters ----------
+  model_evaluation$ind_parms <- 
+    ggpairs(nm_baseline, columns = etas, 
+            diag = list(continuous = "barDiag", na.rm=T), 
+            upper = list(continuous = "blank"), 
+            lower = list(continuous = ally_scatter_lm_cor))
+  
+  ## ------ 3. Individual fits ----------
+  # Takes time to print, comment out the ones you don't need
+  ind_nm_data_split <-
+    nm_conc_data %>% 
+    # OCC column needs to be factor for individual graphics
+    mutate(OCC = factor(OCC, levels = sort(unique(OCC)))) %>% 
+    ind_data_split(id="NMSEQSID")
+  
+  individual_fits <-
+    list(gg_title_plot(ind_eval_titlepage))
+  
+  # TAPD
+  individual_fits$t1 <- 
+    gg_title_plot("Concentrations versus Time after dose")
+  
+  p <- vector("list",length(ind_nm_data_split))
+  for(i in 1:length(ind_nm_data_split)){
+    p[[i]] <- 
+      gg_conc_time_ind(ind_nm_data_split[[i]],
+                       x=TAPD, id=NMSEQSID, occ=OCC, 
+                       facet_scales = NULL) + 
+      labs(y=labs_conc, x=labs_TAPD)
+  }
+  individual_fits <- c(individual_fits, p)
+  
+  # TAD log Y
+  individual_fits$t2 <- 
+    gg_title_plot("Concentrations versus Time after dose \n\n Log y")
+  
+  p <- vector("list",length(ind_nm_data_split))
+  for(i in 1:length(ind_nm_data_split)){
+    p[[i]] <- 
+      gg_conc_time_ind(ind_nm_data_split[[i]],
+                       x=TAPD, id=NMSEQSID, occ=OCC, 
+                       facet_scales = NULL) + 
+      scale_y_log10() + 
+      labs(y=labs_conc, x=labs_TAPD)
+  }
+  individual_fits <- c(individual_fits, p)
+  
+  # TIME
+  individual_fits$t3 <- gg_title_plot("Concentrations versus Time")
+  
+  p <- vector("list",length(ind_nm_data_split))
+  for(i in 1:length(ind_nm_data_split)){
+    p[[i]] <- 
+      gg_conc_time_ind(ind_nm_data_split[[i]],
+                       x=TIME, id=NMSEQSID, occ=OCC) + 
+      labs(y=labs_conc, x=labs_TAFD)
+  }
+  individual_fits <- c(individual_fits, p)
+  
+  # TIME log Y
+  individual_fits$t4 <- 
+    gg_title_plot("Concentrations versus Time \n\n Log y")
+  
+  p <- vector("list",length(ind_nm_data_split))
+  for(i in 1:length(ind_nm_data_split)){
+    p[[i]] <- 
+      gg_conc_time_ind(ind_nm_data_split[[i]],
+                       x=TIME, id=NMSEQSID, occ=OCC) +
+      scale_y_log10() + 
+      labs(y=labs_conc, x=labs_TAFD)
+  }
+  individual_fits <- c(individual_fits, p)
+  
+  # Print
+  invisible(lapply(individual_fits, grob_draw))
+  
+  if(params$print_results){
+    # Print to file
+    pdf(file = graphics_filepath, height=8.5, width=11)
+    invisible(lapply(model_evaluation, grob_draw))
+    dev.off()
+    
+    pdf(file=ind_graphics_filepath, height=8.5, width=11)
+    invisible(lapply(individual_fits, grob_draw))
+    dev.off()
+  }
+}
+```
+
+#  Run011
+
+```{r, run011}
+model_to_eval <- "011"
+
+if(model_to_eval=="011"){
+  
+  # -----------------------
+  #  Read in output files
+  # -----------------------
+  run_db <- xpose_data(runno = model_to_eval, 
+                       dir = base_model_dir)
+  # Extract run description
+  descr <- run_db$summary$value[run_db$summary$label=="descr"]
+  
+  # -----------------------
+  #  Define output file names and title pages
+  # -----------------------
+  graphics_filepath      <- file.path(res_base_model_dir, 
+                                      paste0("evaluation_run", model_to_eval,".pdf"))
+  ind_graphics_filepath  <- file.path(res_base_model_dir, 
+                                      paste0("individual_fits_run", model_to_eval,".pdf"))
+  
+  eval_titlepage         <- paste0("Goodness-of-fit plots \n\n Run", model_to_eval, 
+                                   "\n\n", descr)
+  ind_eval_titlepage     <- paste0("Individual fits \n\n Run", model_to_eval, 
+                                   "\n\n", descr)
+  
+  # -----------------------
+  #  Run summary
+  # -----------------------
+  summary(run_db)
+  
+  # -----------------------
+  #  Parameter summary
+  # -----------------------
+  prm_table(run_db)
+  
+  # # Or if you prefer the sumo output:
+  # system_cmd(paste0('sumo run', model_to_eval,".lst"), 
+  #            dir=base_model_dir)
+  
+  # -----------------------
+  #  Graphical evaluation
+  # -----------------------
+  # Extract data and create sub datasets
+  tab <- run_db$data$data[[1]]
+  # Extract which etas to plot
+  etas <- names(tab)[(str_detect(names(tab), "ETA.*"))]
+  
+  # R settings for dataset
+  tab <- r_data_structure(tab, # requires data.frame
+                          data_spec = file.path(source_data_dir, dataspec_filename),
+                          nm_output = T)
+  tab <- add_variables(tab)
+  
+  nm_conc_data <- tab %>% filter(EVID==0)
+  nm_baseline <- nm_conc_data %>% filter(!duplicated(NMSEQSID))
+  
+  # ------ 1. GOF pooled data ----------
+  model_evaluation <-
+    list(gg_title_plot(eval_titlepage))
+  
+  model_evaluation$basic_gof <- 
+    arrangeGrob( # grid.arrange(
+      gg_obs_vs_pred(nm_conc_data, y=DV, x=PRED), 
+      gg_obs_vs_pred(nm_conc_data, y=DV, x=IPRED), 
+      gg_residuals(nm_conc_data, y=IWRESI, x=TIME, absolute=T), 
+      gg_residuals(nm_conc_data, y=CWRES, x=PRED), 
+      nrow=2)
+  
+  model_evaluation$cwres <- 
+    arrangeGrob( # grid.arrange(
+      gg_residuals(nm_conc_data, y=CWRES, x=TIME), 
+      gg_residuals(nm_conc_data, y=CWRES, x=TAPD), 
+      gg_residuals(nm_conc_data, y=CWRES, x=PRED), 
+      gg_qq_plot(nm_conc_data, sample=CWRES),
+      nrow=2)
+  
+  model_evaluation$npde <- 
+    arrangeGrob( # grid.arrange(
+      gg_residuals(nm_conc_data, y=NPDE, x=TIME), 
+      gg_residuals(nm_conc_data, y=NPDE, x=TAPD), 
+      gg_residuals(nm_conc_data, y=NPDE, x=PRED), 
+      gg_qq_plot(nm_conc_data, sample=NPDE),
+      nrow=2)
+  
+  # Print
+  invisible(lapply(model_evaluation, grob_draw))
+  
+  ## ------ 2. Distribution of individual parameters ----------
+  model_evaluation$ind_parms <- 
+    ggpairs(nm_baseline, columns = etas, 
+            diag = list(continuous = "barDiag", na.rm=T), 
+            upper = list(continuous = "blank"), 
+            lower = list(continuous = ally_scatter_lm_cor))
+  
+  ## ------ 3. Individual fits ----------
+  # Takes time to print, comment out the ones you don't need
+  ind_nm_data_split <-
+    nm_conc_data %>% 
+    # OCC column needs to be factor for individual graphics
+    mutate(OCC = factor(OCC, levels = sort(unique(OCC)))) %>% 
+    ind_data_split(id="NMSEQSID")
+  
+  individual_fits <-
+    list(gg_title_plot(ind_eval_titlepage))
+  
+  # TAPD
+  individual_fits$t1 <- 
+    gg_title_plot("Concentrations versus Time after dose")
+  
+  p <- vector("list",length(ind_nm_data_split))
+  for(i in 1:length(ind_nm_data_split)){
+    p[[i]] <- 
+      gg_conc_time_ind(ind_nm_data_split[[i]],
+                       x=TAPD, id=NMSEQSID, occ=OCC, 
+                       facet_scales = NULL) + 
+      labs(y=labs_conc, x=labs_TAPD)
+  }
+  individual_fits <- c(individual_fits, p)
+  
+  # TAD log Y
+  individual_fits$t2 <- 
+    gg_title_plot("Concentrations versus Time after dose \n\n Log y")
+  
+  p <- vector("list",length(ind_nm_data_split))
+  for(i in 1:length(ind_nm_data_split)){
+    p[[i]] <- 
+      gg_conc_time_ind(ind_nm_data_split[[i]],
+                       x=TAPD, id=NMSEQSID, occ=OCC, 
+                       facet_scales = NULL) + 
+      scale_y_log10() + 
+      labs(y=labs_conc, x=labs_TAPD)
+  }
+  individual_fits <- c(individual_fits, p)
+  
+  # TIME
+  individual_fits$t3 <- gg_title_plot("Concentrations versus Time")
+  
+  p <- vector("list",length(ind_nm_data_split))
+  for(i in 1:length(ind_nm_data_split)){
+    p[[i]] <- 
+      gg_conc_time_ind(ind_nm_data_split[[i]],
+                       x=TIME, id=NMSEQSID, occ=OCC) + 
+      labs(y=labs_conc, x=labs_TAFD)
+  }
+  individual_fits <- c(individual_fits, p)
+  
+  # TIME log Y
+  individual_fits$t4 <- 
+    gg_title_plot("Concentrations versus Time \n\n Log y")
+  
+  p <- vector("list",length(ind_nm_data_split))
+  for(i in 1:length(ind_nm_data_split)){
+    p[[i]] <- 
+      gg_conc_time_ind(ind_nm_data_split[[i]],
+                       x=TIME, id=NMSEQSID, occ=OCC) +
+      scale_y_log10() + 
+      labs(y=labs_conc, x=labs_TAFD)
+  }
+  individual_fits <- c(individual_fits, p)
+  
+  # Print
+  invisible(lapply(individual_fits, grob_draw))
+  
+  if(params$print_results){
+    # Print to file
+    pdf(file = graphics_filepath, height=8.5, width=11)
+    invisible(lapply(model_evaluation, grob_draw))
+    dev.off()
+    
+    pdf(file=ind_graphics_filepath, height=8.5, width=11)
+    invisible(lapply(individual_fits, grob_draw))
+    dev.off()
+  }
+}
+```
+
