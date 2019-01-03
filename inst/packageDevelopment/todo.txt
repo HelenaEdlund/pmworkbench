@@ -1,3 +1,6 @@
+* Clean up s02)dataset)revew similar to done in demo
+
+
 * Add testing of all functions
 
 * All plot functions should be able to take a missingFlag and exclude that from the plots/print them as NA/missing

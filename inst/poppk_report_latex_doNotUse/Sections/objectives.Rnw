@@ -1,0 +1,17 @@
+\section{Objectives}\label{sec:objectives}
+
+% -------------------------------------------------
+% Instructions
+% -------------------------------------------------
+% Suggested be non-technical, e.g. ``to describe the PK properties of compound X in patients with Y''. 
+% Preferably also includes the objectives related to Simulation and Predictions, i.e. not only descriptive objectives.
+
+% -------------------------------------------------
+% Start writing your objectives here
+% -------------------------------------------------
+The objectives of this analysis were:
+\begin{itemize}
+  \item to describe the PK properties of \Sexpr{drugName} in healthy volunteers and patients with XXX including subject covariate effects on the PK parameters,
+  \item to calculate individual empirical Bayes estimates (EBEs) of \Sexpr{drugName} PK parameters,
+  \item to calculate individual \Sexpr{drugName} exposure to enable subsequent exposure-efficacy and/or exposure-safety analyses.
+\end{itemize}

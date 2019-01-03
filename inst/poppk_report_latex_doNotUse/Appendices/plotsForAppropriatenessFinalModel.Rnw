@@ -1,0 +1,27 @@
+% -------------------------------------------------
+% Appendix setup 
+% -------------------------------------------------
+% Start a partial table of content, list of tables and list of figures. 
+\startcontents[sections]
+\startlist[appFinalModel]{lof}
+\startlist[appFinalModel]{lot}
+
+\azappendix{Plots representing appropriateness of final model} \label{app:additionalModelEvaluation}
+
+\printcontents[sections]{l}{1}{\section*{\contentsname}}
+\printlist[appFinalModel]{lot}{}{\section*{\listtablename}}
+\printlist[appFinalModel]{lof}{}{\section*{\listfigurename}}
+\cleardoublepage
+
+% -------------------------------------------------
+% Start writing appendix here
+% -------------------------------------------------
+What to include here?
+
+% -------------------------------------------------
+% Stop writing appendix here, end the adding to the lists:
+% -------------------------------------------------
+\stopcontents[sections]
+\stoplist[appFinalModel]{lof}
+\stoplist[appFinalModel]{lot}
+\cleardoublepage

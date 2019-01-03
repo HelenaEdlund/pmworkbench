@@ -1,0 +1,7 @@
+% No partial table of content, list of tables and list of figures needed for this appendix
+\azappendix{Listings of patients with organ impairment} \label{app:imparimentListings} 
+
+% -------------------------------------------------
+% Stop writing appendix here
+% -------------------------------------------------
+\cleardoublepage

@@ -1,0 +1,28 @@
+% -------------------------------------------------
+% Appendix setup 
+% -------------------------------------------------
+% Start a partial table of content, list of tables and list of figures. 
+\startcontents[sections]
+\startlist[appVPC]{lof}
+\startlist[appVPC]{lot}
+
+\azappendix{Additional visual predictive checks}\label{app:additionalVPCs}  
+
+\printcontents[sections]{l}{1}{\section*{\contentsname}}
+\printlist[appVPC]{lot}{}{\section*{\listtablename}}
+\printlist[appVPC]{lof}{}{\section*{\listfigurename}}
+\cleardoublepage
+
+% -------------------------------------------------
+% Start writing appendix here
+% -------------------------------------------------
+
+
+
+% -------------------------------------------------
+% Stop writing appendix here, end the adding to the lists:
+% -------------------------------------------------
+\stopcontents[sections]
+\stoplist[appVPC]{lof}
+\stoplist[appVPC]{lot}
+\cleardoublepage

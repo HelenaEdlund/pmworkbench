@@ -1,0 +1,49 @@
+% -------------------------------------------------
+% Appendix setup 
+% -------------------------------------------------
+% Start a partial table of content, list of tables and list of figures. 
+\startcontents[sections]
+\startlist[appKeyModels]{lof}
+\startlist[appKeyModels]{lot}
+
+\azappendix{Parameter estimates for key models during model development}\label{app:parameterEstimatesKeyModels} 
+
+\printcontents[sections]{l}{1}{\section*{\contentsname}}
+\printlist[appKeyModels]{lot}{}{\section*{\listtablename}}
+\printlist[appKeyModels]{lof}{}{\section*{\listfigurename}}
+\cleardoublepage
+
+% -------------------------------------------------
+% Start writing appendix here
+% -------------------------------------------------
+<<keyModelParms, results='asis', echo=F, warning=F, message=F>>=
+# Now contains all, will have to find a way to separate out the 'key' ones
+keyModelParms <- 
+  read.csv(file = file.path(resBaseModelDir, "ParameterTables.csv"),
+           stringsAsFactors = F)
+
+keyModelParms <- keyModelParms[,c("Run","par","estimate","CV","RSE","Shrink")]
+# remove parameters fixed to zero (or 1 for F1)
+keyModelParms <- keyModelParms[keyModelParms$estimate != 0,]
+keyModelParms <- keyModelParms[!(keyModelParms$par =="F1" & 
+                                 keyModelParms$estimate == 1),]
+keyModelParms$Run[duplicated(keyModelParms$Run)] <- ""
+
+keyModelParmsLatex <-
+  aztable(keyModelParms,
+          caption="Parameter Estimates for key models",
+          label="keyModelParms") %>% 
+  sprinkle_colnames(par = "Parameter", 
+                    estimate = "Estimate", 
+                    CV = "\\%CV", 
+                    Shrink = "$\\eta$-shrinkage")
+print(keyModelParmsLatex)
+@
+
+% -------------------------------------------------
+% Stop writing appendix here, end the adding to the lists:
+% -------------------------------------------------
+\stopcontents[sections]
+\stoplist[appKeyModels]{lof}
+\stoplist[appKeyModels]{lot}
+\cleardoublepage

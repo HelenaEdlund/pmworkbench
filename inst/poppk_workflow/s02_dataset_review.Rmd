@@ -132,6 +132,14 @@ if(unique(unique(rawdata$DOSE) %in% doses)){
 
 Cross-check of studies, cohorts, parts and dosing regimens
 ```{r} 
+# use this whne updating
+# collapse_unique <- function(x){
+#   values <- unique(x)
+#   paste(values, collapse=", ")
+# }
+
+
+
 # code needs to be modified if several dose/freq levels a cohort
 rawdata %>% 
   group_by(STUDYID, COHORT) %>% 
@@ -269,6 +277,9 @@ Is the TAPD increasing for each dose event?
 # Add a flag identifier for each dosing event (can be checked irrespectively of subject id)
 tmp <- rawdata %>% 
   mutate(AMTFLAG = ifelse(!is.na(AMT), c(1:n()), NA))
+
+## Add different code if using addl + ii
+
 
 # If there are there any rows before the first dose fill those with NA and do locf for the rest
 na_index <- which(!is.na(tmp$AMT))[1]-1
