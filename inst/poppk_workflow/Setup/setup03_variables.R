@@ -1,10 +1,10 @@
 ###################################################
-# setup03_projectVariables.R
+# setup03_variables.R
 # 
 # Author: 
 # Created on: 
-# Description: set variables used throughout workflow
-# Dependencies: None
+# Description: Set variables used throughout workflow
+# Dependencies: setup01_rEnvironment.R
 ###################################################
 
 # Note, this script is a little bit of a mixbag for reporting and workflow. 
@@ -16,30 +16,37 @@
 # ------------------------------------------------------------------
 #  People
 # ------------------------------------------------------------------
-analystName <- "Analyst"
-reviewerName <- "Reviewer"
-approverName <- "Approver"
-programmerName <- "Programmer" 
+all_people <- list(
+  analyst_name = "Analyst", 
+  reviewer_name = "Reviewer",
+  approver_name = "Approver",
+  programmer_name = "Programmer") 
 
 # ------------------------------------------------------------------
 #  Data
 # ------------------------------------------------------------------
 
-# --------------------
+# -------------------- 
 #  Source dataset
 # --------------------
-sourcedataFileName      <- "filename_deliverydate.csv"
-deliveryDate  <- "deliverydate"
+sourcedata_filename      <- "filename_deliverydate.csv"
+dataspec_filename        <- "dataVariablesSpecification.csv" 
+# used by pmxplore::r_data_structure
+
+# delivery_date  <- "deliverydate"
 # # or extract from filename it contains deliverydate:
-# deliveryDate  <- 
-#   paste(str_extract_all(sourcedataFileName, pattern ="[:digit:]")[[1]], collapse = "")
-dataSpecFileName        <- "dataSpecFileName.csv" # used by pmxplore::r_data_structure
+delivery_date  <-
+  sourcedata_filename %>% 
+  str_extract_all(pattern ="(_).*\\d") %>% 
+  str_replace_all(pattern ="_", "") %>% 
+  unlist %>% 
+  as.numeric
 
 # --------------------
 #  Drug and lloq
 # --------------------
-drugName <- "DrugName"
-DVunit <- "ng/mL"
+drug_name <- "drugname"
+dv_unit <- "ng/mL"
 LLOQ <- 1
 # molecularWeight <- # g/mol
 
@@ -47,41 +54,46 @@ LLOQ <- 1
 #  Columns in data (used in dataset checkout and EDA)
 # --------------------
 # Define variables as they are expected to be based on protocol and data spec
-ostudies <- c("d0000c0001","d0000c0002")   # original names of studies that should be included
-studies  <- c(1,2)            # numeric version 
-cohorts  <- c(1,2)            # cohorts 
-# parts  <- c(1001,1002)      # parts 
-doses    <- c(25,100, 150, 300)         # doses 
+ostudies <- c("study1","study2")   # original names of studies that should be included
+studies  <- c(1,2)                 # numeric version 
+cohorts  <- c(1,2)                 # cohorts 
+# parts  <- c(1001,1002)           # parts 
+doses    <- c(25, 100, 150, 300)   # doses 
 
 # Define columns in dataset (and what type)
-studyRelatedCols <- 
+cols_study_related <- 
   c("OSTUDYID", "STUDYID", "COHORT","DOSE", "NMSEQSID", "OSID")
 # "PART"
 
 # Continuous columns (not including covariates)
-numericCols <- c('TAFD','TAPD','DV','LNDV')
+cols_numeric <- c('TAFD','TAPD','DV','LNDV')
 
 ## Character/Categorical columns (not including covariates)
-factorCols <- c('C','AMT','OCC','MDV','CMT','BLQ','EVID',"FREQ", "COMMENT")
+cols_factors <- c('C','AMT','OCC','MDV','CMT','BLQ','EVID',"FREQ", "COMMENT")
 
 ## Lists of continuous and categorical covariates (which may change with time)
 # included these as examples here - they are not actually changing
-catCov <- c("BRENAL")
-contCov <- c("BWT","BBMI")
+cols_cat_cov <- c("BRENAL")
+cols_cont_cov <- c("BWT","BBMI")
 
 ## List of baseline continuous and categorical covariates (should not change with time)
-bCatCov  <- c("SEXM","RACE","ETHNIC","BRENAL")
-bContCov <- c("AGE","BSCR","BEGFR","BWT","BHT","BBMI")
+base_cat_cov  <- c("SEXM","RACE","ETHNIC","BRENAL")
+base_cont_cov <- c("AGE","BSCR","BEGFR","BWT","BHT","BBMI")
 
-allCols <- c(studyRelatedCols, numericCols, factorCols, bCatCov, bContCov)
+# This vector should contain all columns of your dataset
+all_cols <- c(cols_study_related, cols_numeric, cols_factors, 
+              cols_cat_cov,cols_cont_cov,base_cat_cov,base_cont_cov)
 
 # ------------------------------------------------------------------
 #  List lables and settings for plots used in EDA
 # ------------------------------------------------------------------
 # Reoccuring labels
-labTAPD <- "Time after dose (h)"
-labTAFD <- "Time after first dose (h)"
-labConc <- paste0(drugName," concentration (", DVunit,")")
+labs_TAPD <- "Time after dose (h)"
+labs_TAFD <- "Time after first dose (h)"
+labs_conc <- paste0(drug_name," concentration (", dv_unit,")")
 
 # Re-occuring x-axis breaks
-tapdBreaks <- c(0, 2, 4, 6, 8, seq(from=12, to=200, by=6))
+tapd_breaks <- c(0, 2, 4, 6, 8, seq(from=12, to=200, by=6))
+
+############ Save environment ############
+save.image(file = file.path("Scripts",'Setup',"setup_variables.RData"))
