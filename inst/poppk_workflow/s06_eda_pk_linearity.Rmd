@@ -16,28 +16,26 @@ params:
 # Description: Exploratory data analysis of PK linearity for population PK analysis
 # Dependencies: s01_dataset_preparation.R / s01.RData
 ###################################################
+
+# Settings to knit in top directory:
+# Everything after this chunk works with paths relative top level
 library(rprojroot)
-knitr::opts_chunk$set(echo=F)
 knitr::opts_knit$set(root.dir=find_root(has_file("OpenProject.Rproj"))) 
-# for correct printing of dust tables
-options(pixie_interactive=F)
+knitr::opts_chunk$set(echo=F)
 
 # Note: R markdown opens a new R session, your global environment is not available.
+
 ```
+
 
 This script uses the data.frame "data", loaded from s01.RData. That is, all rows with C=="C" has been excluded for exploratory data analysis.
 ```{r environmentPrep, echo=T, message=F}
-# ------------------------------------------------------------------
-#  Prepare environment
-# ------------------------------------------------------------------
-# load packages
-source(file=file.path("Scripts","Setup","setup01_packages.R")) 
-# load output from s01_DatasetPrep.R
-load(file=file.path("Scripts","s01.RData"))
+# -----------------------------------------------
+# Prepare environment
+# -----------------------------------------------
+source(file = file.path("./Scripts","Setup","setup01_rEnvironment.R"))
+load(file = file.path("./Scripts","s01.RData"))
 
-# White background in plots
-theme_set(theme_bw()) # to be replaced with a azTheme
-update_geom_defaults("point", list(shape = 1))
 ```
 
 Are the plots and tables also being written to file?
@@ -45,7 +43,11 @@ Are the plots and tables also being written to file?
 params$print_results
 ```
 
-# Included data
+
+
+
+# NCA analysis using PKNCA
+
 ```{r, include=F} 
 # The sections below will need to be tweaked for each specific project. 
 # This should only serve as an example
@@ -102,6 +104,7 @@ nca_single_conc_0 <-
 nca_single_concs <- 
   full_join(nca_single_concs, nca_single_conc_0) %>% 
   arrange(ID.OCC, TAFD)
+
 ```
 
 ## Plots of occasions included for single dose NCA parameters
@@ -133,14 +136,15 @@ for(i in 1:length(nca_single_concs_split)){
   p1[[i]] <- p
 }
 
-invisible(lapply(p1, grob_draw))
+walk(p1, grob_draw)
 ```
 
 ```{r, include=F}
 if(params$print_results){
-  pdf(file=file.path(res_eda_dir, paste0("nca_single_dose_", delivery_date,".pdf")),
+  pdf(file = file.path(directories[["res_eda_dir"]],
+                       paste0("nca_single_dose_", delivery_date,".pdf")),
       height=8.5, width=11)
-  invisible(lapply(p1, grob_draw))
+  walk(p1, grob_draw)
   dev.off()
 }
 ```
@@ -168,14 +172,15 @@ nca_results_single_extract <-
 
 # Merge back with covariate data (extract from dose object)
 cov_extract_single <- 
-  nca_results_single$data$dose$data[, c("ID.OCC", cols_cont_cov, base_cont_cov,
-                                        cols_cat_cov, base_cat_cov,
+  nca_results_single$data$dose$data[, c("ID.OCC", columns[["cont_cov"]], columns[["base_cont_cov"]],
+                                        columns[["cat_cov"]], columns[["base_cat_cov"]],
                                       "OSID","OSTUDYID","AMT","FREQ", "DOSEFLAG")]
 
 # unique(unique(covExtractSingle$ID.OCC) == unique(nca_results_single_extract$ID.OCC))
 results_single <- 
   full_join(nca_results_single_extract, cov_extract_single) %>% 
   rename(dose = AMT)
+
 ```
 
 ```{r, include=F}
@@ -247,14 +252,15 @@ for(i in 1:length(nca_multiple_conc_split)){
   p1[[i]] <- p
 }
 
-invisible(lapply(p1, grob_draw))
+walk(p1, grob_draw)
 ```
 
 ```{r, include=F}
 if(params$print_results) {
-  pdf(file=file.path(res_eda_dir, paste0("nca_multiple_dose_",delivery_date,".pdf")),
+  pdf(file = file.path(directories[["res_eda_dir"]],
+                       paste0("nca_multiple_dose_",delivery_date,".pdf")),
       height=8.5, width=11)
-  invisible(lapply(p1, grob_draw))
+  walk(p1, grob_draw)
   dev.off()
 }
 ```
@@ -282,8 +288,8 @@ nca_results_multiple_extract <-
 
 # Merge back with covariate data (extract from dose object)
 cov_extract_multiple <- 
-  nca_results_multiple$data$dose$data[, c("ID.OCC", cols_cont_cov, base_cont_cov,
-                                        cols_cat_cov, base_cat_cov,
+  nca_results_multiple$data$dose$data[, c("ID.OCC", columns[["cont_cov"]], columns[["base_cont_cov"]],
+                                        columns[["cat_cov"]], columns[["base_cat_cov"]],
                                         "OSID","OSTUDYID","AMT","FREQ", "DOSEFLAG")]
 
 # unique(unique(covExtractMultiple$ID.OCC) == unique(nca_results_multiple_extract$ID.OCC))
@@ -297,12 +303,14 @@ results_multiple <- full_join(nca_results_multiple_extract,
 results <- rbind(results_single, results_multiple)
 
 ### Calculate dose normalized values
-results$aucInfDoseNorm <- (results$aucinf.obs / results$dose)
+results$aucInfDoseNorm  <- (results$aucinf.obs / results$dose)
 results$aucLastDoseNorm <- (results$auclast / results$dose)
-results$cmaxDoseNorm   <- (results$cmax / results$dose)
+results$cmaxDoseNorm    <- (results$cmax / results$dose)
 ```
 
-# Assessment of PK linearity, $AUC_{Inf}$ vs dose
+
+
+# Assessment of PK linearity: AUC vs dose
 ## ANOVA
 
 ```{r, fig.height=5, fig.width=6.5, warning=F, message=F}
@@ -388,13 +396,13 @@ linearity_plots_pool$t_half <-
   labs(y=expression("t"["1/2"]~(h)),
        x = expression(Dose~(mg)))
 
-invisible(lapply(linearity_plots_pool, grob_draw))
+walk(linearity_plots_pool, grob_draw)
 
 if(params$print_results){
-  pdf(file=file.path(res_eda_dir,
-                     paste0("PK_linearity_assessment_pooled_", delivery_date,".pdf")),
+  pdf(file = file.path(directories[["res_eda_dir"]],
+                       paste0("PK_linearity_assessment_pooled_", delivery_date,".pdf")),
       height=4.5, width=5.5)
-  invisible(lapply(linearity_plots_pool , grob_draw))
+  walk(linearity_plots_pool , grob_draw)
   dev.off()
 }
 ```
@@ -462,16 +470,17 @@ linearity_plots_split$t_half_split <-
   labs(y=expression("t"["1/2"]~(h)),
        x=expression(Dose~(mg)))
 
-invisible(lapply(linearity_plots_split, grob_draw))
+walk(linearity_plots_split, grob_draw)
 
 if(params$print_results){
-  pdf(file=file.path(res_eda_dir,
-                     paste0("PK_linearity_assessment_stratified_", delivery_date,".pdf")),
+  pdf(file = file.path(directories[["res_eda_dir"]],
+                       paste0("PK_linearity_assessment_stratified_", delivery_date,".pdf")),
       height=8.5, width=11)
-  invisible(lapply(linearity_plots_split, grob_draw))
+  walk(linearity_plots_split, grob_draw)
   dev.off()
 }
 ```
+
 
 # Assessment of covariate effect on NCA parameters
 ## Continuous covariates
@@ -479,19 +488,18 @@ Add figure text here
 
 ```{r, fig.height=8, fig.width=10, warning=F, message=F}
 dose_norm_cont <-
-  ggduo(results, base_cont_cov, 
+  ggduo(results, columns[["base_cont_cov"]], 
         c("aucInfDoseNorm","aucLastDoseNorm","cmaxDoseNorm"),
         types = list(continuous = "smooth_loess"),
         columnLabelsY = c("AUC[Inf]/Dose~(mg/L%.%h/mg)",
                           "AUC[last]/Dose~(mg/L%.%h/mg)",
                           "C[max]/Dose~(mg/L/mg)"),
         labeller="label_parsed")
-
 dose_norm_cont
 
 if(params$print_results){
-  pdf(file=file.path(res_eda_dir,
-                     paste0("NCA_cont_covariates", delivery_date,".pdf")),
+  pdf(file = file.path(directories[["res_eda_dir"]],
+                       paste0("NCA_cont_covariates", delivery_date,".pdf")),
       height=8, width=10)
   print(dose_norm_cont)
   dev.off()
@@ -502,19 +510,19 @@ if(params$print_results){
 
 ```{r, fig.height=8, fig.width=10, warning=F, message=F}
 dose_norm_cat <-
-  ggduo(results, base_cat_cov,
+  ggduo(results, columns[["base_cat_cov"]],
         c("aucLastDoseNorm","aucLastDoseNorm","cmaxDoseNorm"),
-        types = list(comboVertical = ally_box),
         columnLabelsY = c("AUC[Inf]/Dose~(mg/L%.%h/mg)",
                           "AUC[Last]/Dose~(mg/L%.%h/mg)",
                           "C[max]/Dose~(mg/L/mg)"),
-        labeller="label_parsed")
+        labeller="label_parsed") +
+    theme(axis.text.x = element_text(angle=40, hjust=1))
 
 dose_norm_cat
 
 if(params$print_results){
-  pdf(file=file.path(res_eda_dir,
-                 paste0("NCA_cat_covariates", delivery_date,".pdf")),
+  pdf(file = file.path(directories[["res_eda_dir"]],
+                       paste0("NCA_cat_covariates", delivery_date,".pdf")),
       height=8, width=10)
   print(dose_norm_cat)
   dev.off()
@@ -526,16 +534,16 @@ if(params$print_results){
 dose_norm_study <-
   ggduo(results,"OSTUDYID", 
         c("aucLastDoseNorm","aucLastDoseNorm","cmaxDoseNorm"),
-        types = list(comboVertical = ally_box),
-        columnLabelsY = c("AUC[Inf]/Dose~(mg/L%.%h/mg)",
+         columnLabelsY = c("AUC[Inf]/Dose~(mg/L%.%h/mg)",
                           "AUC[Last]/Dose~(mg/L%.%h/mg)",
                           "C[max]/Dose~(mg/L/mg)"),
-        labeller="label_parsed")
+        labeller="label_parsed") +
+    theme(axis.text.x = element_text(angle=40, hjust=1))
 dose_norm_study
 
 if(params$print_results){
-  pdf(file=file.path(res_eda_dir,
-                 paste0("NCA_by_study", delivery_date,".pdf")),
+  pdf(file = file.path(directories[["res_eda_dir"]],
+                       paste0("NCA_by_study", delivery_date,".pdf")),
       height=8, width=5)
   print(dose_norm_study)
   dev.off()

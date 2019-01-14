@@ -1,5 +1,5 @@
 ---
-title: "Summary of excluded and commented data"
+title: "Summary of excluded data"
 author: "Author"
 date: "Date"
 output: html_document
@@ -10,38 +10,46 @@ params:
 ```{r setup, include=FALSE}
 ###################################################
 # s03_summary_excluded_data.R
-# Description: Summary of data excluded with C="C
+# Description: Summary of data excluded with C="C"
 # Dependencies: s01_dataset_preparation.R / s01.RData
 ###################################################
+
+# Settings to knit in top directory:
+# Everything after this chunk works with paths relative top level
 library(rprojroot)
-knitr::opts_chunk$set(echo=F)
 knitr::opts_knit$set(root.dir=find_root(has_file("OpenProject.Rproj"))) 
-# knit in this directory -> everything after this chunk is relative top level dir
+knitr::opts_chunk$set(echo=F)
 
 # Note: R markdown opens a new R session, your global environment is not available.
 ```
 
-Load the dataset as prepared by "s01_datasetPrep.R":
+Load the dataset as prepared by "s01_dataset_preparation.R"
 ```{r, echo=T, message=F}
-load(file=file.path("./Scripts","s01.RData"))
-# load packages
-source(file=file.path(setup_dir,"setup01_packages.R"))
+# -----------------------------------------------
+# Prepare environment
+# -----------------------------------------------
+source(file = file.path("./Scripts","Setup","setup01_rEnvironment.R"))
+load(file = file.path("./Scripts","s01.RData"))
+
 ```
 
-```{r}
-# The outputs from this scripts are: 
-# 1. a summary table of number of excluded data and reasons (split by >/< LLOQ)
-# 2. a table listing each excluded record
-# Both to be used in the report. 
-```
+The outputs from this scripts are: 
+
+  1. Summary table of number of excluded data and reasons (split by >/< LLOQ)
+  
+  2. Table listing each excluded record
+  
+Both are intended to be used in the report (appendices)
+
 
 # Summary of excluded subjects, concentrations and doses
 Number of subjects excluded and total number in final data:
 ```{r}
-nTotal <- length(unique(rawdata$OSID))
-nIncl <- length(unique(data$OSID))
-print(paste("Excluded: ", nIncl-nTotal))
-print(paste("Included: ", nIncl))
+# data frame 'rawdata' contains all rows. 
+# In the data frame 'data' rows with c="C" has been removed
+rawdata %>% summarize(nSubTot = length(unique(NMSEQSID)))
+
+data    %>% summarize(nSubIncl = length(unique(NMSEQSID)))
 ```
 
 Total number of excluded rows: 
@@ -50,86 +58,105 @@ excluded <- rawdata %>% filter(C=="C")
 nrow(excluded)
 
 excl_doses <- excluded %>% filter(EVID==1)
-excl_conc <- excluded %>% filter(EVID==0)
+excl_conc  <- excluded %>% filter(EVID==0)
 ```
+
 Out of which `r nrow(excl_doses)` rows are doses and `r nrow(excl_conc)` concentrations.
 
-Is anything else than EVID=1 or 0 that is excluded?
+Is anything else than EVID=1 or EVID=0 that is excluded?
 ```{r}
-if(! sum(nrow(excl_doses), nrow(excl_conc)) ==  nrow(excluded)){
-  print("Yes")
-} else {
- print("No") 
-}
+test <- sum(nrow(excl_doses), nrow(excl_conc)) !=  nrow(excluded)
+
+check_message(test)
 ```
 
 How much of the excluded concentration data is missing or BLQ?
-```{r}
-excl_conc_missing <- excl_conc %>% filter(MDV==1)
-paste0(nrow(excl_conc_missing)," (", round(100*(nrow(excl_conc_missing) / nrow(excl_conc))), "%)")
+```{r, echo=T}
+excl_conc_missing <- 
+  excl_conc %>% filter(MDV==1)
+
+nrow(excl_conc_missing) # rows
+100*( nrow(excl_conc_missing) / nrow(excl_conc) )  # percent
 ```
 
-# Review and summary of comments
-## Excluded doses
+
+# Summarize excluded data
+
+## Review reasons for exclusion
+### Excluded doses
 ```{r}
 unique(excl_doses[,"COMMENT"])
 ```
 
-## Excluded concentrations
+### Excluded concentrations
 ```{r}
 unique(excl_conc[,"COMMENT"])
 ```
-### Reason for exclusion split by BLQ/non-BLQ:
+
+Primary reason for exclusion split by BLQ/non-BLQ:
 ```{r}
 # In this dataset there are not multiple comments in one row/cell. 
-# If that is the case, you need to be careful not to count it twice/overwrite the reason.
+# If that is the case, you need to be careful not to count it twice/
+# overwrite the reason/decide which is the primary cause for exclusion.
 
-excl_conc$REASON[str_detect(excl_conc$COMMENT, "Pre first dose sample") & excl_conc$BLQ==1] <- 
-  "Pre first dose sample, BLQ"
-excl_conc$REASON[str_detect(excl_conc$COMMENT, "Pre first dose sample") & excl_conc$BLQ==0] <- 
-  "Pre first dose sample, Non-BLQ"
+# Add flag
+excl_conc <- excl_conc %>% 
+  mutate(REASON = ifelse(str_detect(COMMENT, "Pre first dose sample"), 
+                         "Pre first dose sample", NA),
+         REASON = ifelse(str_detect(COMMENT, "Randomly selected for illustration"), 
+                         "Randomly selected for illustration", REASON)
+         )
 
-excl_conc$REASON[str_detect(excl_conc$COMMENT, "Randomly selected for illustration") & excl_conc$BLQ==1] <- 
-  "Random exclusion, BLQ"
-excl_conc$REASON[str_detect(excl_conc$COMMENT, "Randomly selected for illustration") & excl_conc$BLQ==0] <-
-  "Random exclusionm, Non-BLQ"
-
+# Total n concentration 
 total_conc <- rawdata %>% filter(EVID==0)
 
-summary <- 
+# Generate summary and tweak to presentable table
+summaryExclConc <- 
   excl_conc %>%
-  group_by(REASON) %>% 
+  group_by(REASON, BLQ) %>% 
   summarize(n = n(), 
-            percentOfTotal = round(100 * (n / nrow(total_conc)), digits=1))
-summary
+            `(%)` = round(100 * (n / nrow(total_conc)), digits=1)) %>% 
+  ungroup() %>% 
+  mutate(BLQ = factor(BLQ, levels = c(0,1), labels = c("Non-BLQ", "BLQ")))
+  
+summaryExclConc
 ```
 
 
 ```{r, include=F}
+# Write summary table to file
 if(params$print_results){
-  # Output in reportable table
-  outTab <- summary %>% 
-    mutate(Values = paste0(n, " (", percentOfTotal, "%)")) %>% 
-    select(REASON, Values)
-  
-  write.csv(outTab,
-            file = file.path(res_eda_dir, "omittedConcDataSummary.csv"),
+  write.csv(summaryExclConc,
+            file = file.path(directories[["res_eda_dir"]], "omittedConcDataSummary.csv"),
+            row.names = F)
+}
+
+# Full listing to file
+listingExcluded <- 
+  excl_conc %>%  # in this case using excl_conc as no doses were excluded
+  # excluded %>% 
+  select(NMSEQSID,TIME,TAPD,DV,AMT,EVID,MDV,BLQ,DOSE,REASON)
+
+if(params$print_results){
+  write.csv(listingExcluded,
+            file = file.path(directories[["res_eda_dir"]], "omittedDataListing.csv"),
             row.names = F)
 }
 ```
 
-### How much of the non-BLQ data are sparse samples: 
+
+### How much of the non-BLQ excluded data are from sparse samples:
 ```{r}
-# Note, sparse data is those without a OCC assignment in this particular dataset
-# Hence code might need to be changed depending on current data
-sparse <- 
+# Note, in this example the sparse data is those without a OCC assignment
+summarySparse <- 
   excl_conc %>%
-  filter(is.na(OCC)) %>% 
+  filter(is.na(OCC) & BLQ==0) %>% 
   group_by(REASON) %>% 
   summarize(n = n(), 
-            percentOfTotal = round(100 * (n / nrow(total_conc)), digits=1))
-sparse
+            `(%)` = round(100 * (n / nrow(total_conc) ), digits=1))
+summarySparse
 ```
+
 
 
 # Review of comments not leading to exclusion

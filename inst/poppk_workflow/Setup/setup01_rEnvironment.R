@@ -4,20 +4,28 @@
 # Author: 
 # Created on: 
 # Description: Prepare R environment by loading libraries and setting global options
-# Dependencies: setup02_directories.R
+# Dependencies: 
 ###################################################
+
+
+# -----------------------------------------------
+# Load needed packages
+# -----------------------------------------------
 
 # ----------- If needed: do this at first set up -------------------
 if(F){
   devtools::install_github("tsahota/NMprojectAZ")
   devtools::install_github("AstraZeneca/pmworkbench")
   devtools::install_github("AstraZeneca/pmxplore")
+  # need latest version of these two
+  install.packages("GGally", repos = "https://cran.rstudio.com") 
+  install.packages("rmarkdown", repos = "https://cran.rstudio.com") 
 }
 
 # Workflow related packages
 library(rprojroot)
 library(knitr)
-library(NMproject) # also loads tidyproject
+library(NMprojectAZ) # also loads tidyproject
 library(pmworkbench)
 library(pmxplore)
 library(tableone)
@@ -31,3 +39,10 @@ library(GGally)
 library(zoo)
 library(PKNCA)
 
+
+# -----------------------------------------------
+# Settings for ggplot
+# -----------------------------------------------
+# White background in plots
+theme_set(theme_bw()) # to be replaced with a azTheme
+update_geom_defaults("point", list(shape = 1))

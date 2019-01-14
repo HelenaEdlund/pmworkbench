@@ -11,7 +11,7 @@
 # This function is kept here to make it easy to add/remove
 # Kept in a function to not crowd gloabl environment with all dir names separately
 
-list_directories <- function(make = F){
+list_directories <- function(make = T){
   # Directories at activity level
   # do not remove the leading ".", it will cause problems with latex/knitr)
   scripts_dir       <- file.path(".", "Scripts")
@@ -27,9 +27,9 @@ list_directories <- function(make = F){
   setup_dir         <- file.path(scripts_dir, "Setup")
   functions_dir     <- file.path(scripts_dir, "Functions")
   
-  #model_dir
-  base_model_dir      <- file.path(model_dir, "BaseModel")
-  covariate_model_dir <- file.path(model_dir, "CovariateModel")
+  # #model_dir - no need for this example
+  # base_model_dir      <- file.path(model_dir, "BaseModel")
+  # covariate_model_dir <- file.path(model_dir, "CovariateModel")
   
   #result_dir
   res_other_dir       <- file.path(results_dir, "Other")
@@ -37,7 +37,8 @@ list_directories <- function(make = F){
   res_base_model_dir  <- file.path(results_dir, "BaseModel")
   res_cov_model_dir   <- file.path(results_dir, "CovariateModel")
   
-  # #report_dir - to be incoporated
+  # # Uncomment if using latex+knitr for report writing
+  #report_dir 
   # rep_setup_dir <- file.path(report_dir, "Setup")
   # rep_sections_dir <- file.path(report_dir, "sections")
   # rep_appendicies_dir <- file.path(report_dir, "appendices")
@@ -61,10 +62,11 @@ list_directories <- function(make = F){
       res_eda_dir = res_eda_dir,
       res_base_model_dir = res_base_model_dir,
       res_cov_model_dir = res_cov_model_dir #,
-      #rep_setup_dir = rep_setup_dir,
-      #rep_sections_dir = rep_sections_dir,
-      #rep_appendicies_dir = rep_appendicies_dir,
-      #rep_images_dir = rep_images_dir
+      # # Uncomment if using latex+knitr for report writing
+      # rep_setup_dir = rep_setup_dir,
+      # rep_sections_dir = rep_sections_dir,
+      # rep_appendicies_dir = rep_appendicies_dir,
+      # rep_images_dir = rep_images_dir
     )
   
   if(make){
@@ -76,4 +78,4 @@ list_directories <- function(make = F){
   return(all_dir)
 } 
 
-all_dir <- project_dirs()
+directories <- list_directories()
