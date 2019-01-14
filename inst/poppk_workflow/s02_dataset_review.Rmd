@@ -294,9 +294,16 @@ Does any subject have any (unexpected) change in dosing freqency?
 # Don't forget to exclude cohorts where you expect a change (if any)
 tmp <- rawdata %>% 
   group_by(STUDYID, NMSEQSID) %>% 
-  filter(II != 0) %>% 
-  summarize(II = collapse_unique(II)) %>% 
+  distinct(FREQ, .keep_all = T) %>% 
+  ungroup() %>% 
   summarize(duplicates = unique(duplicated(NMSEQSID))) 
+
+# Use if using ADDL and II in dataset
+# tmp <- rawdata %>% 
+#   group_by(STUDYID, NMSEQSID) %>% 
+#   filter(II != 0) %>% 
+#   summarize(II = collapse_unique(II)) %>% 
+#   summarize(duplicates = unique(duplicated(NMSEQSID))) 
 
 check_message(logical = any(tmp$duplicates))
 ``` 
@@ -422,7 +429,7 @@ Does rows with missing DV and the correct EVID, MDV and BLQ?
 
 ```{r}
 rawdata %>% 
-  subset(is.na(DV) & is.na(AMT)) %>% 
+  filter(is.na(DV) & is.na(AMT)) %>% 
   summarize(dv = collapse_unique(DV), 
             evid = collapse_unique(EVID), 
             mdv = collapse_unique(MDV), 
@@ -444,7 +451,7 @@ unique(is.na(rawdata$DV) == is.na(rawdata$LNDV))
 tmp <- rawdata %>% 
   filter(!is.na(DV)) %>% 
   select(DV, LNDV) %>% 
-  mutate_if(is.numeric, signif, digits=r) %>% 
+  mutate_if(is.numeric, signif, digits=3) %>% 
   mutate(is_equal  = DV==LNDV, 
          deviation = DV-exp(LNDV))
 
@@ -481,8 +488,8 @@ Note: The code in the 4 following chunks are examples from a previous project an
 ```{r, echo=T}
 # data subset with observations only
 rawdataConc <- rawdata %>% 
-  subset(EVID==0) %>% 
-  subset(!(MDV==1 & is.na(BLQ)))
+  filter(EVID==0) %>% 
+  filter(!(MDV==1 & is.na(BLQ)))
 
 # # This comparison may have to be split by study if data includes many subjects and different study designs
 # 
@@ -494,7 +501,7 @@ rawdataConc <- rawdata %>%
 Are there any missings for NOMTIME or TAPD?
 ```{r, echo=T}
 # tmp <- rawdataConc %>% 
-#   subset(is.na(DIFF))
+#   filter(is.na(DIFF))
 # tmp
 # unique(tmp$COMMENT)
 # unique(tmp$C)
@@ -503,7 +510,7 @@ Are there any missings for NOMTIME or TAPD?
 Check of negative differences (i.e. assessment later than planned)
 ```{r, echo=T}
 # rawdataConc %>% 
-#   subset(!is.na(DIFF) & DIFF <= -0.17) %>% #>= 10 min difference
+#   filter(!is.na(DIFF) & DIFF <= -0.17) %>% #>= 10 min difference
 #   select(c("OSID","DATE","TIME",'TAFD','NOMTIME','TAPD',
 #            "DIFF",'DV','BLQ','FREQ','COMMENT','MDV','OCC','COHORT')) %>% 
 #   group_by(FREQ, NOMTIME, COHORT) %>% 
@@ -516,7 +523,7 @@ Check of negative differences (i.e. assessment later than planned)
 Check of positive differences (i.e. assessment earlier than planned)
 ```{r, echo=T}
 # rawdataConc %>% 
-#   subset(!is.na(DIFF) & DIFF >= 0.17) %>% #>= 10 min difference
+#   filter(!is.na(DIFF) & DIFF >= 0.17) %>% #>= 10 min difference
 #   select(c("OSID","DATE","TIME",'TAFD','NOMTIME','TAPD',
 #            "DIFF",'DV','BLQ','FREQ','COMMENT','MDV','OCC','COHORT')) %>% 
 #   group_by(FREQ, NOMTIME, COHORT) %>% 
@@ -533,7 +540,7 @@ Check of positive differences (i.e. assessment earlier than planned)
 ### Baseline data
 ```{r}
 baseline_rawdata <- rawdata %>% 
-  subset(!duplicated(NMSEQSID))
+  distinct(NMSEQSID, .keep_all = T)
 ```
 
 Summary of continous covariates:
@@ -643,10 +650,10 @@ Baseline  Creatinine clearance
 ```{r}
 # Re-calculate and compare
 CRCL <- temp %>% 
-  mutate(calcCRCL = (140-AGE) * BWT / (BCREA*0.8136), # males
+  mutate(calcCRCL = (140-AGE) * BWT / (BSCR*0.8136), # males
          calcCRCL = ifelse(SEXM==0, 0.85*calcCRCL, calcCRCL), # females
-         calcCRCL = round(calcCRCL, digits = 2)
-         orignialCRCL = round(BCRCL, digits = 2) %>% 
+         calcCRCL = round(calcCRCL, digits = 2),
+         orignialCRCL = round(BCRCL, digits = 2)) %>% 
   select(calcCRCL, orignialCRCL)
 CRCL
 ```

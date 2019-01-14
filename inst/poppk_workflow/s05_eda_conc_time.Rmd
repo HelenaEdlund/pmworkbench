@@ -142,7 +142,9 @@ if(params$print_results){
 }
 ```
 
+# Samples vs time after dose
 
+Add code for histograms of BLQ/non-blq histograms for TAD
 
 # Stratified concentration versus time graphics
 

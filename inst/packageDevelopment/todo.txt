@@ -1,26 +1,25 @@
-* Clean up s02)dataset)revew similar to done in demo
+Overall: 
 
+* Check units in BEGFR calculations 
 
-* Add testing of all functions
+* TADF and TAPD shift calculations not working... (collapse_uniwue not outputting a logical)
+
+* II vs Freq scrips for chekcing unexpected changes - cannot use collapse_unique. try with distict insted. 
+
+* Add tests for all functions
 
 * All plot functions should be able to take a missingFlag and exclude that from the plots/print them as NA/missing
 
 * generate azTheme
 
-* Follow up on variableList for data structure function - meeting scheduled for wednesday
 
-* What to do with the functions defined within nm templates: 
-    - executeUpdate
-    - cltFileUpdate
-    
-    
-    
-Add datasets:  
 
-Dataset with large range of dose groups to test the dose proportionality functions
 
-Dataset with more than 1 study
+Datasets:  
 
-NONMEM output file to use with r_data_staructure, nm=T
+1. Somwthing is weird with BW in the exisitng dataset. Might be good to include one additional dose level in this example
 
-If expanding to JSON: add dataspec example for that
+2. Dataset with large range of dose groups to test the dose proportionality functions
+
+3. NONMEM output file to use with r_data_staructure, nm=T
+

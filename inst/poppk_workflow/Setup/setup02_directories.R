@@ -56,17 +56,17 @@ list_directories <- function(make = T){
       source_data_dir = source_data_dir,
       setup_dir = setup_dir,
       functions_dir = functions_dir,
-      base_model_dir = base_model_dir,
-      covariate_model_dir = covariate_model_dir,
+    # base_model_dir = base_model_dir,
+    # covariate_model_dir = covariate_model_dir,
       res_other_dir = res_other_dir,
       res_eda_dir = res_eda_dir,
       res_base_model_dir = res_base_model_dir,
       res_cov_model_dir = res_cov_model_dir #,
-      # # Uncomment if using latex+knitr for report writing
-      # rep_setup_dir = rep_setup_dir,
-      # rep_sections_dir = rep_sections_dir,
-      # rep_appendicies_dir = rep_appendicies_dir,
-      # rep_images_dir = rep_images_dir
+    # # Uncomment if using latex+knitr for report writing
+    # rep_setup_dir = rep_setup_dir,
+    # rep_sections_dir = rep_sections_dir,
+    # rep_appendicies_dir = rep_appendicies_dir,
+    # rep_images_dir = rep_images_dir
     )
   
   if(make){

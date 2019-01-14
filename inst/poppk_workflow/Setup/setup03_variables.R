@@ -77,11 +77,11 @@ list_columns <- function(){
   
   # Baseline continuous and categorical covariates
   base_cat_cov  <- c("SEXM","RACE")
-  base_cont_cov <- c("AGE","BCRCL","BBWT")
+  base_cont_cov <- c("AGE","BCRCL","BWT")
   
   # Time-varyint continuous and categorical covariates
-  cols_cat_cov <- c("RENAL")
-  cols_cont_cov <- c("BWT","BMI")
+  cat_cov <- c("RENAL")
+  cont_cov <- c("WT","BMI")
   
   # This list should contain all columns of your dataset
   cols <- list(study_related = study_related, 
@@ -110,7 +110,7 @@ columns <- list_columns()
 # Reoccuring labels
 labs_TAPD <- "Time after dose (h)"
 labs_TAFD <- "Time after first dose (h)"
-labs_conc <- paste0(drug_name," concentration (", dv_unit,")")
+labs_conc <- paste0(dv_name," concentration (", dv_unit,")")
 
 # Re-occuring x-axis breaks
 tapd_breaks <- c(0, 2, 4, 6, 8, seq(from=12, to=200, by=6))
