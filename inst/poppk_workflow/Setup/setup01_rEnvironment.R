@@ -20,6 +20,7 @@ library(knitr)
 library(NMproject) # also loads tidyproject
 library(pmworkbench)
 library(pmxplore)
+library(tableone)
 
 # Tidyverse and plotting
 library(tidyverse)
