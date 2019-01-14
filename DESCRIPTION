@@ -3,12 +3,13 @@ Version: 0.1.0.9001
 Title: Respoitory of templates for pharmacometric projects
 Description: Respoitory of templates for pharmacometric projects
 Authors@R: c(
-    person("helena", "edlund", email = "helena.edlund@astrazeneca.com", role = c("aut", "cre")),
-    person("devin", "pastoor", email = "devin.pastoor@gmail.com", role = c("aut"))
+    person("Helena", "Edlund", email = "helena.edlund@astrazeneca.com", role = c("aut", "cre")),
+    person("Devin", "Pastoor", email = "devin.pastoor@gmail.com", role = c("aut")),
+    person("Philip", "Delff", email = "philip.delff@astrazeneca.com", role = c("aut"))
     )
 Depends:
     R (>= 3.2.4)
-License: MIT + file license
+License: GPL-3
 Encoding: UTF-8
 LazyData: true
 RoxygenNote: 6.0.1
