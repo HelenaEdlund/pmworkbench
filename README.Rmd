@@ -6,12 +6,12 @@ PMWORKBENCH
 R package serving as a repository for (sets of) template scripts: includes a combination of .R, .Rmd and .Rwd files. 
 
 ```{r}
-library(xpmworkbench)
+library(pmworkbench)
 ```
 
 Currently containing: 
 ```{r}
-pmworkbench_templates()
+template_available()
 ```
 
 ## Download templates

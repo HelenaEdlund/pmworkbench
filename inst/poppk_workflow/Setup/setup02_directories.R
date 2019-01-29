@@ -9,7 +9,7 @@
 ###################################################
 
 # This function is kept here to make it easy to add/remove
-# Kept in a function to not crowd gloabl environment with all dir names separately
+# Kept in a function to not crowd global environment with all dir names separately
 
 list_directories <- function(make = T){
   # Directories at activity level
