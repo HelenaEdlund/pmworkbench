@@ -93,3 +93,8 @@ that one place if it should change in the future. Let's discuss, there
 are some upcoming changes to the infrastructure so we will not have
 the QCP_modeling structure I believe. We should have a solution that
 works for the new setting. 
+
+
+## Howto
+- convert README.Rmd to README.md
+knit("README.Rmd")
