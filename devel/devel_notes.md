@@ -19,7 +19,8 @@ I suggest shortening names. Is what is created with the templates an activity? T
 - [ ] Template_available should be moved to its own file. I wouldn't expect to find other functions in download_template.R than download_template due to the name of the file. Helena: OK, will do.
 Status: Helena to implement
 
-
+- [ ] Definition of workflows. Guide to how to create one.
+ 
 ### List_directories
 - [ ] I suggest shortening names. Is what is created with the
      templates an activity? Then I suggest adirs$scripts to be a

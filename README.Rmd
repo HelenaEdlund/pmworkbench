@@ -3,7 +3,10 @@ PMWORKBENCH
 
 **UNDER DEVELOPMENT**
 
-R package serving as a repository for (sets of) template scripts: includes a combination of .R, .Rmd and .Rwd files. 
+This packages provides template scripts for pharmacometric workflows in R. 
+
+The provided workflows include a combination of .R, .Rmd and .Rwd files. They
+integrate Nonmem, PSN and R packages for pharmacometrics.
 
 ```{r}
 library(pmworkbench)
