@@ -3,11 +3,14 @@
 library(devtools)
 library(sinew)
 library(roxygen2)
+library(pkgdown)
 
 makeOxygen()
 devtools::document()
 
 devtools::test()
+
+pkgdown::build_site()
 
 # use_vignette(vignetteName, pkg="../pmxplore")
 
