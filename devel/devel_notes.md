@@ -30,6 +30,12 @@
 
 ### Todo
 
+- [ ] Look at and potentially incorporate EDA sections from Nuria
+
+- [ ] re-think model evaluation script using parameter based .Rmd files.
+
+- [ ] include vpc examples? Other simulation examples?
+
 #### List_directories
 - [ ] I suggest shortening names. Is what is created with the
      templates an activity? Then I suggest adirs$scripts to be a
@@ -81,3 +87,15 @@ works for the new setting.
 ## Howto
 - convert README.Rmd to README.md
 knit("README.Rmd")
+
+
+## poppk_reporting_latex
+
+### Template text and figures
+ - [] Merging in the code from R markdown acalabrutinib to latex example? Or to workflow?  
+ - [] Update the template with help from Johanna and Dinko
+
+### Latex class files
+	- [] Update to new AZ housestyle
+	- [] Generate non AZ style (with functions but without the formatting)
+	- [] Check again if humannat is working. Write own bib style?
