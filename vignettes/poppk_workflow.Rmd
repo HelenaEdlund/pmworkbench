@@ -59,9 +59,63 @@ list_files(path = file.path("..",'inst','poppk_workflow'))
 
 ```
 
-You can now 
+# Description of each script
+
+## Setup directory
+The 'Setup' folder contains files working as a configuration for the project. The purpose of these script is to setup the your R environment and define project specific variables which can be used across the other scripts. Meaning, if carefully used, you will only have to define things once.
+
+### `setup01_rEnvironment.R`
 
 
-The 'Functions' folder is intentionally left emtpy and a placeholder for any selfwritten, project specific fundtions you may want to add. 
 
-The 'Setup' folder contains files to setup the R environment and define project specific variables which can be used across the other scripts. 
+### `setup02_directories.R`
+
+
+
+### `setup03_variables.R`
+
+
+## Functions directory
+This folder is intentionally left emtpy but serves as a placeholder for any selfwritten, project specific fundtions you may want to add. Files in here are 
+
+
+
+## Main script directory
+
+### `s00_main.R`
+
+This script should mainly be considered a log book for the analysis and is there for reproducibility purposes. It sources/renders the other scripts in the correct order. Hence, once the appropriate modifications have been done to the template scripts, the entire analysis is ``executable'' from s00_main.R
+
+
+
+### `s01_dataset_preparation.Rmd`
+
+
+### `s02_dataset_review.R`
+
+The intention of this script is pure data review: 
+ - Is all data requested included in the delivered file?
+ - Is the data sorted correctly?
+ - Are the derived covariates calculated correctly?
+ - Cross-checking of columns (EVID, DV, MDV, AMT, etc.)
+
+### `s03_summary_excluded_data.R`
+Summarizes any *a priori* excluded data (commented out). 
+Outputs two csv files commonly requested from regulatory agencies: 
+  - Summary of excluded data by dose or study
+  - Listing of all rows excluded
+
+### `s04_eda_covariates.R`
+Numeric summaries of baseline values
+Matrix plots of correlations and distributions
+Graphics for variations with time
+
+
+### `s05_eda_conc_time.R`
+Concentrations vs. time graphics and summaries
+ - Grouped by study and/or dose
+ - Individual plots 
+
+### `s06_dose_dependency.R`
+
+Linear and log-log fits + graphics and summaries
