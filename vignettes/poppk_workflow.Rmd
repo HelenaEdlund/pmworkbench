@@ -1,0 +1,67 @@
+---
+title: "poppk_workflow"
+author: "Helena Edlund"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{poppk_workflow}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+# Overview
+Population pharmacokinetic (PK) analysis is evolving into a routine, but time-consuming, task in drug development. Having workflows, tools, and processes in one place can enable industrialization of these standard activities, ensuring that results are ready in time. 
+
+The set of templates in this workflow aims to facilitate population PK analyses using RStudio as the interface. The workflow integrates multiple R packages to explore and handle PK data. Parameter estimation is assumed to be carried out via PsN and nonmem (from R using NMproject).
+
+The workflow contains a mix of pure R scripts and rmarkdown files to support each step of a generic population PK analysis. The scripts are *templates* and you must tailor them towards your project.
+
+## Generic Population PK analysis workflow
+
+* Exploration of data
+    - Data set review: ensure correctness, removal and/or correction of any obvious outliers and/or errors
+    - Data analysis: Concentration-time graphics, distributions and summaries of covariates, dose-proportionality assessments 
+
+* Modelling & Simulation
+    - Generation of model/simulation scripts
+    - Model execution and monitoring
+    - Model evaluation / post-processing
+    - Simulations
+
+* Summarizing results in report and/or presentations: covered in a separate set of templates
+
+# Getting started
+
+1. Initiate a new project e.g. using the functionality of `tidyproject`. Among other things, this creates a certain folder scaffold, e.g. a sub-folder for scripts. You can also create a new RStudio project or folder to work from.
+
+2. Download the `poppk_workflow`
+
+```{r}
+library(pmworkbench)
+```
+
+```{r, eval=F}
+template_download(path = "Scripts",
+                  template_type =  "poppk_workflow") 
+```
+
+This will give you a local copy of these scripts and additional folders into your 'Scripts' directory: 
+
+```{r, echo=F}
+list_files(path = file.path("..",'inst','poppk_workflow'))
+
+```
+
+You can now 
+
+
+The 'Functions' folder is intentionally left emtpy and a placeholder for any selfwritten, project specific fundtions you may want to add. 
+
+The 'Setup' folder contains files to setup the R environment and define project specific variables which can be used across the other scripts. 
