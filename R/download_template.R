@@ -8,7 +8,6 @@
 #' 
 #' @param path path to copy to, defaults to a 'Scripts' folder
 #' @param template_type type of project template, default poppk_workflow
-#' @export
 #' @return set of template R and Rmarkdown script files
 #' @export 
 #' @rdname template_download
@@ -62,9 +61,9 @@ template_download <- function(path = "./Scripts",
 #' 
 #' @description Show available project templates
 #' 
-#' @export
 #' @return set of template R and Rmarkdown script files
 #' @rdname template_available
+#' @export
 
 template_available <- function(){
   # find all files in package
