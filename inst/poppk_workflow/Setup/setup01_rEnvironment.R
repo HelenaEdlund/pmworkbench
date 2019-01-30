@@ -25,6 +25,7 @@ if(F){
 # Workflow related packages
 library(rprojroot)
 library(knitr)
+# options(kableExtra.latex.load_packages=FALSE)
 library(kableExtra)
 library(NMprojectAZ) # also loads tidyproject
 library(pmworkbench)
