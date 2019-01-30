@@ -4,12 +4,13 @@
 ## Todo
 - [ ] Add a readme file for developers. Mention in .Rbuildignore
 
-- [ ] Delete packagify branch
+- [ ] Delete packagify branch. Philip: Done.
 
 - [ ] Add NEWS file (for between releases)
 
-- [ ] Decide on either .Md or .html for the README file. The rest of the README files should be listed in .Rbuildignore.
+- [x] Decide on either .Md or .html for the README file. The rest of the README files should be listed in .Rbuildignore. Philip: Done. Using .md.
 
+- [ ] Cleanup workflows "latex_class_files", "poppk_report_latex_doNotUse". I guess we should have a structure like inst/workflows/stable inst/workflows/devel, and inst/workflows/stale or something.
 
 I suggest shortening names. Is what is created with the templates an activity? Then I suggest adirs$scripts to be a function(...) file.path("path/to/scripts",...). Then I would use it! Ok, sure, let's discuss how to get that to work better. 
 
@@ -19,7 +20,8 @@ I suggest shortening names. Is what is created with the templates an activity? T
 - [ ] Template_available should be moved to its own file. I wouldn't expect to find other functions in download_template.R than download_template due to the name of the file. Helena: OK, will do.
 Status: Helena to implement
 
-
+- [ ] Definition of workflows. Guide to how to create one.
+ 
 ### List_directories
 - [ ] I suggest shortening names. Is what is created with the
      templates an activity? Then I suggest adirs$scripts to be a
@@ -42,8 +44,6 @@ Helena: Yeah. I think that entire save command can actually be deleted actually.
 - [ ] Philip: We should consider commenting out some of this. So that the user can easily include if wanted, but so that it isn't there and
      being wrong by default. If the latter is the case, we are introducing a tasks rather than help to the user. 
 Helena: Ok, let's discuss 
-
-
 
 
 ### Todo's (to clean up?)
@@ -92,3 +92,8 @@ that one place if it should change in the future. Let's discuss, there
 are some upcoming changes to the infrastructure so we will not have
 the QCP_modeling structure I believe. We should have a solution that
 works for the new setting. 
+
+
+## Howto
+- convert README.Rmd to README.md
+knit("README.Rmd")
