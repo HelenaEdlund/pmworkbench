@@ -5,13 +5,20 @@ PMWORKBENCH
 
 This package provides template scripts for pharmacometric workflows in R. 
 
-```{r}
+
+```r
 library(pmworkbench)
 ```
 
 Currently containing: 
-```{r}
+
+```r
 template_available()
+```
+
+```
+## [1] "latex_class_files"           "poppk_report_latex_doNotUse"
+## [3] "poppk_workflow"
 ```
 
 ## Download templates
