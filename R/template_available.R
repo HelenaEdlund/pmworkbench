@@ -2,22 +2,30 @@
 #  Show available 
 # ------------------------
 
-#' @title Show available project templates
-#' 
-#' @description Show available project templates
-#' 
-#' @return set of template R and Rmarkdown script files
-#' @rdname template_available
-#' @export
+#' @title Show available activities
+#' @description Show available activities
+#' @param show_devel (Logical) Show activities currently under development, Default: FALSE
+#' @return Character string of the activities available
+#' @rdname activity_available
+#' @export 
 
-activity_available <- function(){
-  # find all files in package
-  fullList <- dir(system.file(package = "pmworkbench"), recursive = F) 
+activity_available <- function(show_devel = FALSE){
   
-  # only show available activity folders
-  activities <- 
-    fullList[! fullList %in% 
-               c("DESCRIPTION", "help", "html", "INDEX",
-                 "Meta", "NAMESPACE", "R")]
+  if(!is.logical(show_devel)){
+    message(show_devel, "is not a logical. Ignored.")
+    show_devel <- FALSE
+  }
+  
+  # find stable activities
+  if(!show_devel){
+    
+    activities <- dir(file.path(
+      system.file(package = "pmworkbench"), "activity_templates_stable"), recursive = F) 
+  } else {
+    
+    activities <- dir(file.path(
+      system.file(package = "pmworkbench"), "activity_templates_devel"), recursive = F) 
+  }
+  
   return(activities)
 }
