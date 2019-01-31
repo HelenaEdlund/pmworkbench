@@ -1,11 +1,12 @@
 Package: pmworkbench
 Version: 0.1.0.9001
-Title: Respoitory of templates for pharmacometric projects
-Description: Respoitory of templates for pharmacometric projects
+Title: Respoitory of templates for pharmacometric activities
+Description: Respoitory of templates for pharmacometric activities
 Authors@R: c(
-    person("Helena", "Edlund", email = "helena.edlund@astrazeneca.com", role = c("aut", "cre")),
-    person("Devin", "Pastoor", email = "devin.pastoor@gmail.com", role = c("aut")),
-    person("Philip", "Delff", email = "philip.delff@astrazeneca.com", role = c("aut"))
+    person("Helena", "Edlund", email = "helena.edlund@astrazeneca.com",
+    role = c("aut", "cre"), comment = c(ORCID = "0000-0002-4036-0831")),
+    person("Philip", "Delff", email = "philip.delff@astrazeneca.com", role = c("aut")), 
+    person("Devin", "Pastoor", email = "devin.pastoor@gmail.com", role = c("aut"))
     )
 Depends:
     R (>= 3.2.4)
