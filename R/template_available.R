@@ -10,14 +10,14 @@
 #' @rdname template_available
 #' @export
 
-template_available <- function(){
+activity_available <- function(){
   # find all files in package
   fullList <- dir(system.file(package = "pmworkbench"), recursive = F) 
   
-  # only show available template folders
-  templates <- 
+  # only show available activity folders
+  activities <- 
     fullList[! fullList %in% 
                c("DESCRIPTION", "help", "html", "INDEX",
-                 "Meta", "NAMESPACE", "R","ReadMeFiles","packageDevelopment")]
-  return(templates)
+                 "Meta", "NAMESPACE", "R")]
+  return(activities)
 }
