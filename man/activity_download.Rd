@@ -5,7 +5,7 @@
 \title{Download activity}
 \usage{
 activity_download(path = "./Scripts", activity_type = "poppk",
-  overwrite = FALSE)
+  overwrite = FALSE, devel = FALSE)
 }
 \arguments{
 \item{path}{path to copy to, defaults to a 'Scripts' folder}
@@ -13,6 +13,8 @@ activity_download(path = "./Scripts", activity_type = "poppk",
 \item{activity_type}{type of activity, default poppk}
 
 \item{overwrite}{PARAM_DESCRIPTION, Default: FALSE}
+
+\item{devel}{(Logical) Get activities currently under development, Default: FALSE}
 }
 \value{
 A set of template script files for the specified activity

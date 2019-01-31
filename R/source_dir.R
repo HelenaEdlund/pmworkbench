@@ -3,11 +3,11 @@
 #' @param path Path to directory of files to source, Default: '.'
 #' @param trace , Default: TRUE
 #' @param ... other arguments to pass to source
-#' @return 
+#' @return Prints files souced to console
 #' @rdname source_dir
 #' @export 
 
-source_dir <- function(path = ".", trace=TRUE, ...){
+source_dir <- function(path, trace=TRUE, ...){
   
   r_scripts <- list.files(path, pattern = "[.][Rr]$")
   

@@ -6,7 +6,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Source all scripts in dir — source_dir • pmworkbench</title>
+<title>Download activity — activity_download • pmworkbench</title>
 
 <!-- jquery -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
@@ -30,9 +30,9 @@
 
 
 
-<meta property="og:title" content="Source all scripts in dir — source_dir" />
+<meta property="og:title" content="Download activity — activity_download" />
 
-<meta property="og:description" content="Sources all .R/.r scripts in a directory" />
+<meta property="og:description" content="Downloads a set of template scripts for pmx activities" />
 <meta name="twitter:card" content="summary" />
 
 
@@ -106,39 +106,44 @@
 <div class="row">
   <div class="col-md-9 contents">
     <div class="page-header">
-    <h1>Source all scripts in dir</h1>
+    <h1>Download activity</h1>
     
-    <div class="hidden name"><code>source_dir.Rd</code></div>
+    <div class="hidden name"><code>activity_download.Rd</code></div>
     </div>
 
     <div class="ref-description">
     
-    <p>Sources all .R/.r scripts in a directory</p>
+    <p>Downloads a set of template scripts for pmx activities</p>
     
     </div>
 
-    <pre class="usage"><span class='fu'>source_dir</span>(<span class='no'>path</span>, <span class='kw'>trace</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>, <span class='no'>...</span>)</pre>
+    <pre class="usage"><span class='fu'>activity_download</span>(<span class='kw'>path</span> <span class='kw'>=</span> <span class='st'>"./Scripts"</span>, <span class='kw'>activity_type</span> <span class='kw'>=</span> <span class='st'>"poppk"</span>,
+  <span class='kw'>overwrite</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>, <span class='kw'>devel</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>)</pre>
     
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
     <colgroup><col class="name" /><col class="desc" /></colgroup>
     <tr>
       <th>path</th>
-      <td><p>Path to directory of files to source, Default: '.'</p></td>
+      <td><p>path to copy to, defaults to a 'Scripts' folder</p></td>
     </tr>
     <tr>
-      <th>trace</th>
-      <td><p>, Default: TRUE</p></td>
+      <th>activity_type</th>
+      <td><p>type of activity, default poppk</p></td>
     </tr>
     <tr>
-      <th>...</th>
-      <td><p>other arguments to pass to source</p></td>
+      <th>overwrite</th>
+      <td><p>PARAM_DESCRIPTION, Default: FALSE</p></td>
+    </tr>
+    <tr>
+      <th>devel</th>
+      <td><p>(Logical) Get activities currently under development, Default: FALSE</p></td>
     </tr>
     </table>
     
     <h2 class="hasAnchor" id="value"><a class="anchor" href="#value"></a>Value</h2>
 
-    <p>Prints files souced to console</p>
+    <p>A set of template script files for the specified activity</p>
     
 
   </div>

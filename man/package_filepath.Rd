@@ -2,16 +2,16 @@
 % Please edit documentation in R/utils.R
 \name{package_filepath}
 \alias{package_filepath}
-\title{get a file or dir from a the package}
+\title{Find package file path}
 \usage{
 package_filepath(...)
 }
 \arguments{
 \item{...}{parameters to pass to system.file}
 }
-\description{
-get a file or dir from a the package
+\value{
+file path
 }
-\details{
-a light wrapper around system.file
+\description{
+A light wrapper around system.file to get extract file or dir from package
 }

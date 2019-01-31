@@ -6,7 +6,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Source all scripts in dir — source_dir • pmworkbench</title>
+<title>Show available activities — activity_available • pmworkbench</title>
 
 <!-- jquery -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
@@ -30,9 +30,9 @@
 
 
 
-<meta property="og:title" content="Source all scripts in dir — source_dir" />
+<meta property="og:title" content="Show available activities — activity_available" />
 
-<meta property="og:description" content="Sources all .R/.r scripts in a directory" />
+<meta property="og:description" content="Show available activities" />
 <meta name="twitter:card" content="summary" />
 
 
@@ -106,39 +106,31 @@
 <div class="row">
   <div class="col-md-9 contents">
     <div class="page-header">
-    <h1>Source all scripts in dir</h1>
+    <h1>Show available activities</h1>
     
-    <div class="hidden name"><code>source_dir.Rd</code></div>
+    <div class="hidden name"><code>activity_available.Rd</code></div>
     </div>
 
     <div class="ref-description">
     
-    <p>Sources all .R/.r scripts in a directory</p>
+    <p>Show available activities</p>
     
     </div>
 
-    <pre class="usage"><span class='fu'>source_dir</span>(<span class='no'>path</span>, <span class='kw'>trace</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>, <span class='no'>...</span>)</pre>
+    <pre class="usage"><span class='fu'>activity_available</span>(<span class='kw'>devel</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>)</pre>
     
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
     <colgroup><col class="name" /><col class="desc" /></colgroup>
     <tr>
-      <th>path</th>
-      <td><p>Path to directory of files to source, Default: '.'</p></td>
-    </tr>
-    <tr>
-      <th>trace</th>
-      <td><p>, Default: TRUE</p></td>
-    </tr>
-    <tr>
-      <th>...</th>
-      <td><p>other arguments to pass to source</p></td>
+      <th>devel</th>
+      <td><p>(Logical) Show activities currently under development, Default: FALSE</p></td>
     </tr>
     </table>
     
     <h2 class="hasAnchor" id="value"><a class="anchor" href="#value"></a>Value</h2>
 
-    <p>Prints files souced to console</p>
+    <p>Character string of the activities available</p>
     
 
   </div>

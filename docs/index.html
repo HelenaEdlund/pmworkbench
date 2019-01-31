@@ -18,7 +18,7 @@
 <![endif]-->
 </head>
 <body>
-    <div class="container template-article">
+    <div class="container template-home">
       <header><div class="navbar navbar-default navbar-fixed-top" role="navigation">
   <div class="container">
     <div class="navbar-header">
@@ -68,12 +68,43 @@
 
       
       </header><div class="row">
-  <div class="col-md-9 contents">
-    
-
-    
-    
-
+  <div class="contents col-md-9">
+<div id="pmworkbench" class="section level1">
+<div class="page-header"><h1 class="hasAnchor">
+<a href="#pmworkbench" class="anchor"></a>PMWORKBENCH</h1></div>
+<p><strong>UNDER DEVELOPMENT</strong></p>
+<p>This package provides template scripts for pharmacometric workflows in R.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/library">library</a></span>(pmworkbench)</code></pre></div>
+<p>Currently containing:</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="https://www.rdocumentation.org/packages/pmworkbench/topics/template_available">template_available</a></span>()</code></pre></div>
+<pre><code>## [1] "latex_class_files"           "poppk_report_latex_doNotUse"
+## [3] "poppk_workflow"</code></pre>
+<div id="download-templates" class="section level2">
+<h2 class="hasAnchor">
+<a href="#download-templates" class="anchor"></a>Download templates</h2>
+<p>Each project type have a read me documentation for what is required to use that particular set, which can be downloaded with get_report_readme().</p>
+</div>
+<div id="demo-tutorial" class="section level2">
+<h2 class="hasAnchor">
+<a href="#demo-tutorial" class="anchor"></a>Demo / tutorial</h2>
+<p>A demo of how the scripts work together is under development.</p>
+</div>
+<div id="planned-expansions" class="section level2">
+<h2 class="hasAnchor">
+<a href="#planned-expansions" class="anchor"></a>Planned expansions</h2>
+<p>Plans are to expand the set of templates as more people start using it. Next analysis type will likely be QT analysis (workflow + report) and then PK/PD analyses (probably stratified by therapeutic areas).</p>
+</div>
+<div id="available-templates" class="section level2">
+<h2 class="hasAnchor">
+<a href="#available-templates" class="anchor"></a>Available templates</h2>
+<div id="pop-pk-workflow" class="section level3">
+<h3 class="hasAnchor">
+<a href="#pop-pk-workflow" class="anchor"></a>Pop PK workflow</h3>
+<p>The provided workflows include a combination of .R, .Rmd and .Rwd files. They integrate Nonmem, PSN and R packages for pharmacometrics.</p>
+<p>Templates, including folder structures, are downloaded using init_project(). The templates are <em>not</em> executable files but to be seen as templates. Modifications and setup are needed.</p>
+</div>
+</div>
+</div>
   </div>
 
   <div class="col-md-3 hidden-xs hidden-sm" id="sidebar">
@@ -92,10 +123,8 @@
 </ul>
 </div>
 
-      </div>
-
+  </div>
 </div>
-
 
       <footer><div class="copyright">
   <p>Developed by Helena Edlund, Devin Pastoor, Philip Delff.</p>

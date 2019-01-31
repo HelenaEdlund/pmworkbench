@@ -15,3 +15,10 @@ pkgdown::build_site()
 # use_vignette(vignetteName, pkg="../pmxplore")
 
 # dump(function_name, file = "../pmxplore/R/file_name.R")
+
+
+
+
+makeOxygen(activity_download)
+
+install.packages("sinew")
