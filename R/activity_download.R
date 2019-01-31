@@ -2,25 +2,26 @@
 #  Download
 # ------------------------
 
-#' @title Download project templates
-#' 
-#' @description Downloads a set of template scripts for nlme projects in nonmem
-#' 
+#' @title Download activity
+#' @description Downloads a set of template scripts for pmx activities
 #' @param path path to copy to, defaults to a 'Scripts' folder
-#' @param template_type type of project template, default poppk_workflow
-#' @return set of template R and Rmarkdown script files
+#' @param activity_type type of activity, default poppk
+#' @param overwrite PARAM_DESCRIPTION, Default: FALSE
+#' @return A set of template script files for the specified activity
+#' @rdname activity_download
 #' @export 
-#' @rdname template_download
-#' @importFrom purrr map discard
+#' @importFrom glue glue
+#' @importFrom crayon red blue
+#' @importFrom purrr map
 
-template_download <- function(path = "./Scripts",
-                              template_type = "poppk_workflow",
+activity_download <- function(path = "./Scripts",
+                              activity_type = "poppk",
                               overwrite = FALSE) {
     
-    project_folder <- package_filepath(template_type)
+    project_folder <- package_filepath(activity_type)
     if (project_folder == "") {
-      stop(glue::glue("No template detected for type:  {template_type},
-                      check available via `template_available()`"))
+      stop(glue::glue("No activity detected for type:  {activity_type},
+                      check available via `activity_available()`"))
     }
     
     if (dir.exists(path) && !overwrite) {
@@ -47,8 +48,8 @@ template_download <- function(path = "./Scripts",
     done("Directory structure created")
 
     file.copy(to_copy, to_path)
-    done("Template files copied")
+    done("Files copied")
     
-    done(crayon::blue(template_type), " templates available at ", crayon::blue(path) )
+    done(crayon::blue(activity_type), " files available at ", crayon::blue(path) )
     return(TRUE) 
   }
