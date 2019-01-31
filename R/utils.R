@@ -6,13 +6,15 @@ is_dir <- function(x) {
   isTRUE(file.info(x)$isdir)
 }
 
-#' get a file or dir from a the package
+
+#' @title Find package file path
+#' @description A light wrapper around system.file to get extract file or dir from package
 #' @param ... parameters to pass to system.file
-#' @details
-#' a light wrapper around system.file
+#' @return file path
 package_filepath <- function(...) {
   system.file(..., package = "pmworkbench")
 }
+
 
 # helpers pulled in from https://github.com/dpastoor/devutils initially on Jan 2018
 
@@ -63,27 +65,15 @@ list_files <- function(
   return(files__)
 }
 
-
-stop_if_null <- function(check, message) {
-  if (is.null(check)) {
-    stop(message)
-  }
-  invisible()
-}
-
-
 #' list files, including hidden ones, in a directory
 #' @rdname list_files
 #' @param ... parameters to pass to list_files
 #' @return a list containing files and dirs elements
 #' @export
-list_files_and_dirs <- function(
-  ...
-) {
+list_files_and_dirs <- function(...){
   files__ <- list_files(...)
   return(list(files = files__, dirs = unique(dirname(files__))))
 }
-
 
 stop_if_null <- function(check, message) {
   if (is.null(check)) {
