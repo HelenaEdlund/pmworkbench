@@ -16,9 +16,3 @@ pkgdown::build_site()
 
 # dump(function_name, file = "../pmxplore/R/file_name.R")
 
-
-
-
-makeOxygen(activity_download)
-
-install.packages("sinew")

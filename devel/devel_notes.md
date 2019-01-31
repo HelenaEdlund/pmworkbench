@@ -1,6 +1,6 @@
-# Workbench developers' notebook
+# pmworkbench developers' notebook
 
-## Workbench functionality
+## pmworkbench functionality
 
 ### Todo
 - [ ] Add a readme file for developers. Mention in .Rbuildignore
@@ -11,7 +11,7 @@
 
 - [x] Decide on either .Md or .html for the README file. The rest of the README files should be listed in .Rbuildignore. Philip: Done. Using .md.
 
-- [ ] Cleanup workflows "latex_class_files", "poppk_report_latex_doNotUse". I guess we should have a structure like inst/workflows/stable inst/workflows/devel, and inst/workflows/stale or something. Helena: yes please
+- [x] Cleanup folders "latex_class_files", "poppk_report_latex_doNotUse". I guess we should have a structure like inst/workflows/stable inst/workflows/devel, and inst/workflows/stale or something. Helena: Done
 
 ### Download_template:
 - [ ] The test whether there is anything in the destination dir is unnecessarily rigid. It will be annoying in a lot of cases. I suggest creating all the destination file names and check whether any of these exist. If so, give an error and tell user which ones were found. 
@@ -23,10 +23,8 @@
 ### Tests 
 - [ ] Basically no tests added so far...
 
-- [ ] How do we go about with testing of the template scripts? Standard testing frame work will not work.. 
 
-
-## poppk_workflow
+## poppk
 
 ### Todo
 
@@ -59,11 +57,11 @@ Helena: Yeah. I think that entire save command can actually be deleted actually.
 - [ ] Philip: We should consider commenting out some of this. So that the user can easily include if wanted, but so that it isn't there and being wrong by default. If the latter is the case, we are introducing a tasks rather than help to the user. Helena: Ok, let's discuss 
 
 #### Bugs
-- [ ] poppk_workflow/s02_data_review.R: Check the units in BEGFR calculations in poppk_workflow/s02_data_review.R
+- [ ] poppk/s02_data_review.R: Check the units in BEGFR calculations
 
-- [ ] poppk_workflow/s02_data_review.R: TADF and TAPD shift calculations not working... (collapse_unique not outputting a logical)
+- [ ] poppk/s02_data_review.R: TADF and TAPD shift calculations not working... (collapse_unique not outputting a logical)
 
-- [ ] poppk_workflow/s02_data_review.R II vs Freq scrips for chekcing unexpected changes - cannot use collapse_unique. try with distict insted. 
+- [ ] poppk/s02_data_review.R II vs Freq scrips for chekcing unexpected changes - cannot use collapse_unique. try with distict insted. 
 
 
 ## Discussion
@@ -83,17 +81,21 @@ are some upcoming changes to the infrastructure so we will not have
 the QCP_modeling structure I believe. We should have a solution that
 works for the new setting. 
 
+- Helena: How do we go about with testing of the activity template scripts? Standard testing frame work will not work.. 
+
+- Helena: Talk about how many of the utils functions that actually need to be exported. Could be internal only to make more clean
+
 
 ## Howto
 - convert README.Rmd to README.md
 knit("README.Rmd")
 
 
-## poppk_reporting_latex
+## poppk_report_latex
 
 ### Template text and figures
- - [] Merging in the code from R markdown acalabrutinib to latex example? Or to workflow?  
- - [] Update the template with help from Johanna and Dinko
+ - [] Merging in the code from R markdown acalabrutinib to latex example?
+ - [] Update the template text, figures etc (with help from Dinko and Sergey?)
 
 ### Latex class files
 	- [] Update to new AZ housestyle
